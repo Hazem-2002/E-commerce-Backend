@@ -5,28 +5,24 @@ const {
 } = require("./common/validationRules");
 
 const createSubcategoryValidator = [
-  nameRule("Subcategory", 2, 50).bail({ level: "request" }),
-  mongoIdRule("category").bail({ level: "request" }),
+  nameRule("name", "Subcategory name", 2, 50),
+  mongoIdRule("category", "Category ID"),
 ];
 
 const getSubcategoriesValidator = [
-  mongoIdRule("id").bail({ level: "request" }).optional(),
-  limitFieldsRule("Subcategories").bail({ level: "request" }),
+  mongoIdRule("id", "Category ID").optional(),
+  limitFieldsRule("fields", "Subcategory fields").optional(),
 ];
 
-const getSubcategoryByIdValidator = [
-  mongoIdRule("id").bail({ level: "request" }),
-];
+const getSubcategoryByIdValidator = [mongoIdRule("id", "Subcategory ID")];
 
 const updateSubcategoryValidator = [
-  mongoIdRule("id").bail({ level: "request" }),
-  nameRule("Subcategory", 2, 50).bail({ level: "request" }).optional(),
-  mongoIdRule("category").bail({ level: "request" }).optional(),
+  mongoIdRule("id", "Subcategory ID"),
+  nameRule("name", "Subcategory name", 2, 50).optional(),
+  mongoIdRule("category", "Category ID").optional(),
 ];
 
-const deleteSubcategoryValidator = [
-  mongoIdRule("id").bail({ level: "request" }),
-];
+const deleteSubcategoryValidator = [mongoIdRule("id", "Subcategory ID")];
 
 module.exports = {
   createSubcategoryValidator,

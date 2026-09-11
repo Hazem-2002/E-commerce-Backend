@@ -37,6 +37,13 @@ categorySchema.set("toJSON", {
 });
 
 // Pre-save middleware to generate slug from name
+categorySchema.pre("validate", function () {
+  if (this.isModified("name")) {
+    this.slug = slugify(this.name, { lower: true });
+  }
+});
+
+// Pre-update middleware to generate slug from name when updating
 categorySchema.pre(/update/i, function () {
   const update = this.getUpdate().$set || this.getUpdate();
   if (update.name) {

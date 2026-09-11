@@ -2,45 +2,36 @@ const AsyncWrapper = require("../utils/asyncWrapper");
 const ApiError = require("../utils/apiError");
 const httpStatusText = require("../utils/httpStatusText");
 
-const ApiFeatures = require("../utils/apiFeatures");
 const {
-  handleAdminRoleTransition,
-  handleSuperAdminRoleTransition,
-} = require("../utils/roleTransitions");
-
-const UsersModel = require("../models/users.model");
-
-const {
-  uploadToCloudinary,
-  deleteFromCloudinary,
-} = require("../services/cloudinary.service");
+  getUsersService,
+  getUserByIdService,
+  updateUserService,
+  deleteUserService,
+} = require("../services/users.service");
 
 const getUsers = AsyncWrapper(async (req, res, next) => {
-  const apiFeatures = new ApiFeatures(UsersModel.find(), req.query);
-
-  apiFeatures
-    .filter()
-    .search()
-    .paginate(await UsersModel.countDocuments(apiFeatures.filters))
-    .sort()
-    .limitFields();
-
-  const users = await apiFeatures.query;
+  const { users, paginatedResults } = await getUsersService(req.query);
 
   res.status(200).json({
     status: httpStatusText.SUCCESS,
-    ...apiFeatures.paginatedResults,
+    ...paginatedResults,
     data: { users },
   });
 });
 
 const getUserById = AsyncWrapper(async (req, res, next) => {
   const { id } = req.params;
-  const user = await UsersModel.findById(id);
 
-  if (!user) {
-    return next(new ApiError(404, "User not found"));
-  }
+  const user = await getUserByIdService(id);
+
+  res.status(200).json({
+    status: httpStatusText.SUCCESS,
+    data: { user },
+  });
+});
+
+const getMe = AsyncWrapper(async (req, res, next) => {
+  const user = await getUserByIdService(req.user._id);
 
   res.status(200).json({
     status: httpStatusText.SUCCESS,
@@ -49,42 +40,42 @@ const getUserById = AsyncWrapper(async (req, res, next) => {
 });
 
 const updateUser = AsyncWrapper(async (req, res, next) => {
-  const { id } = req.params;
-
-  if (!req.file && !req.body) {
-    return next(new ApiError(400, "No data provided for update"));
-  }
-
-  const user = await UsersModel.findById(id);
-
-  if (!user) {
-    return next(new ApiError(404, "User not found"));
-  }
-
-  if (req.file) {
-    if (user.image.public_id !== "users/profile-images/uvjrevfifa7lvkpn3o3k") {
-      await deleteFromCloudinary(user.image.public_id);
-    }
-
-    const { secure_url: image_url, public_id } = await uploadToCloudinary(
-      req.file.buffer,
-      "users/profile-images",
+  if (!req.file && !req.body && Object.keys(req.body).length === 0) {
+    return next(
+      new ApiError(
+        400,
+        "No data provided for update. Please provide at least one field to update.",
+      ),
     );
-    req.body.image = { image_url, public_id };
   }
 
-  // Prevent updating role and password through this endpoint
-  delete req.body.role;
-  delete req.body.password;
+  const updatedUser = await updateUserService({
+    id: req.params.id,
+    updatedData: req.body,
+    file: req.file,
+  });
 
-  const updatedUser = await UsersModel.findByIdAndUpdate(
-    id,
-    { $set: req.body },
-    {
-      new: true,
-      runValidators: true,
-    },
-  );
+  res.status(200).json({
+    status: httpStatusText.SUCCESS,
+    data: { user: updatedUser },
+  });
+});
+
+const updateMe = AsyncWrapper(async (req, res, next) => {
+  if (!req.file && !req.body && Object.keys(req.body).length === 0) {
+    return next(
+      new ApiError(
+        400,
+        "No data provided for update. Please provide at least one field to update.",
+      ),
+    );
+  }
+
+  const updatedUser = await updateUserService({
+    id: req.user._id,
+    updatedData: req.body,
+    file: req.file,
+  });
 
   res.status(200).json({
     status: httpStatusText.SUCCESS,
@@ -95,51 +86,19 @@ const updateUser = AsyncWrapper(async (req, res, next) => {
 const deleteUser = AsyncWrapper(async (req, res, next) => {
   const { id } = req.params;
 
-  const user = await UsersModel.findById(id);
-
-  if (!user) {
-    return next(new ApiError(404, "User not found"));
-  }
-
-  const isOwner = req.user._id.toString() === id;
-  const isSuperAdmin = user.role === "super-admin";
-  const isAdmin = user.role === "admin";
-
-  if (
-    (isSuperAdmin && !isOwner) ||
-    (isAdmin && req.user.role !== "super-admin" && !isOwner)
-  ) {
-    return next(new ApiError(403, "You are not allowed to delete this user"));
-  }
-
-  const session = await UsersModel.startSession();
-
-  try {
-    await session.withTransaction(async () => {
-      if (isSuperAdmin) {
-        await handleSuperAdminRoleTransition(session, "delete");
-      }
-
-      if (isAdmin) {
-        await handleAdminRoleTransition(session, "delete");
-      }
-
-      // await UsersModel.findByIdAndDelete(id).session(session);
-
-      // const publicId = user.image?.public_id;
-
-      // if (
-      //   publicId &&
-      //   publicId !== "users/profile-images/uvjrevfifa7lvkpn3o3k"
-      // ) {
-      //   await deleteFromCloudinary(publicId);
-      // }
-    });
-  } finally {
-    await session.endSession();
-  }
+  const user = await deleteUserService(id, req.user);
 
   res.status(200).json({
+    status: httpStatusText.SUCCESS,
+    message: "User deleted successfully",
+    data: { user },
+  });
+});
+
+const deleteMe = AsyncWrapper(async (req, res, next) => {
+  const user = await deleteUserService(req.user._id, req.user);
+
+  res.status(200).clearCookie("refreshToken").json({
     status: httpStatusText.SUCCESS,
     message: "User deleted successfully",
     data: { user },
@@ -149,6 +108,9 @@ const deleteUser = AsyncWrapper(async (req, res, next) => {
 module.exports = {
   getUsers,
   getUserById,
+  getMe,
   updateUser,
+  updateMe,
   deleteUser,
+  deleteMe,
 };

@@ -4,7 +4,7 @@ const { Readable } = require("stream");
 const ApiError = require("../utils/apiError");
 
 const uploadToCloudinary = (buffer, folder) => {
-return new Promise((resolve, reject) => {
+  return new Promise((resolve, reject) => {
     const stream = cloudinary.uploader.upload_stream(
       { folder },
       (error, result) => {

@@ -1,45 +1,22 @@
-const SubcategoryModel = require("../models/subcategory.model");
-const CategoryModel = require("../models/category.model");
-
 const asyncWrapper = require("../utils/asyncWrapper");
 const ApiError = require("../utils/apiError");
+const httpStatusText = require("../utils/httpStatusText");
 
-const ApiFeatures = require("../utils/apiFeatures");
+const {
+  createSubcategoryService,
+  getSubcategoriesService,
+  getSubcategoryByIdService,
+  updateSubcategoryService,
+  deleteSubcategoryService,
+} = require("../services/subcategory.service");
 
 const createSubcategory = asyncWrapper(async (req, res, next) => {
   const { name, category } = req.body;
 
-  const existingSubcategory = await SubcategoryModel.exists({
-    name,
-  });
-
-  if (existingSubcategory) {
-    return next(
-      new ApiError(
-        400,
-        "Subcategory with this name already exists in the specified category",
-      ),
-    );
-  }
-
-  const existingCategory = await CategoryModel.exists({ _id: category });
-
-  if (!existingCategory) {
-    return next(new ApiError(400, "There is no category with the provided ID"));
-  }
-
-  const newSubcategory = await SubcategoryModel.create({
-    name,
-    category,
-  });
-
-  await newSubcategory.populate({
-    path: "category",
-    select: "-createdAt -updatedAt",
-  });
+  const newSubcategory = await createSubcategoryService(name, category);
 
   res.status(201).json({
-    success: true,
+    status: httpStatusText.SUCCESS,
     message: `Subcategory created successfully`,
     data: { subcategory: newSubcategory },
   });
@@ -48,43 +25,14 @@ const createSubcategory = asyncWrapper(async (req, res, next) => {
 const getSubcategories = asyncWrapper(async (req, res, next) => {
   const { id } = req.params;
 
-  if (id) {
-    const categoryExists = await CategoryModel.exists({ _id: id });
-
-    if (!categoryExists) {
-      return next(
-        new ApiError(400, "There is no category with the provided ID"),
-      );
-    }
-  }
-
-  const apiFeatures = new ApiFeatures(SubcategoryModel.find(), req.query);
-
-  apiFeatures
-    .filter(id ? { category: id } : {})
-    .search()
-    .paginate(await SubcategoryModel.countDocuments(apiFeatures.filters))
-    .sort()
-    .limitFields(id ? "name slug createdAt updatedAt" : "")
-    .populate(["category"], "-createdAt -updatedAt");
-
-  const { totalResults, totalPages } = apiFeatures.paginatedResults;
-
-  // Check if the requested page number is valid
-  if (apiFeatures.page > totalPages && totalResults > 0) {
-    return next(
-      new ApiError(
-        400,
-        "Invalid page number. The requested page exceeds the total number of pages.",
-      ),
-    );
-  }
-
-  const subcategories = await apiFeatures.query;
+  const { subcategories, paginatedResults } = await getSubcategoriesService({
+    query: req.query,
+    id,
+  });
 
   res.status(200).json({
-    success: true,
-    ...apiFeatures.paginatedResults,
+    status: httpStatusText.SUCCESS,
+    ...paginatedResults,
     data: { subcategories },
   });
 });
@@ -92,17 +40,10 @@ const getSubcategories = asyncWrapper(async (req, res, next) => {
 const getSubcategoryById = asyncWrapper(async (req, res, next) => {
   const { id } = req.params;
 
-  const subcategory = await SubcategoryModel.findById(id).populate({
-    path: "category",
-    select: "-createdAt -updatedAt",
-  });
-
-  if (!subcategory) {
-    return next(new ApiError(404, "Subcategory not found"));
-  }
+  const subcategory = await getSubcategoryByIdService(id);
 
   res.status(200).json({
-    success: true,
+    status: httpStatusText.SUCCESS,
     data: { subcategory },
   });
 });
@@ -111,51 +52,19 @@ const updateSubcategory = asyncWrapper(async (req, res, next) => {
   const { id } = req.params;
   const { name, category } = req.body;
 
-  if (!name && !category) {
+  if (!req.body || Object.keys(req.body).length === 0) {
     return next(
       new ApiError(
         400,
-        "At least one of 'name' or 'category' must be provided",
+        "No data provided for update. Please provide at least one field to update.",
       ),
     );
   }
 
-  if (name) {
-    const existingSubcategory = await SubcategoryModel.exists({
-      _id: { $ne: id },
-      name,
-    });
-
-    if (existingSubcategory) {
-      return next(
-        new ApiError(
-          400,
-          "Subcategory with this name already exists in the specified category",
-        ),
-      );
-    }
-  }
-
-  if (category) {
-    const existingCategory = await CategoryModel.exists({ _id: category });
-
-    if (!existingCategory) {
-      return next(new ApiError(400, "The specified category does not exist"));
-    }
-  }
-
-  const subcategory = await SubcategoryModel.findByIdAndUpdate(
-    id,
-    { $set: req.body },
-    { new: true, runValidators: true },
-  ).populate({ path: "category", select: "-createdAt -updatedAt" });
-
-  if (!subcategory) {
-    return next(new ApiError(404, "Subcategory not found"));
-  }
+  const subcategory = await updateSubcategoryService({ id, name, category });
 
   res.status(200).json({
-    success: true,
+    status: httpStatusText.SUCCESS,
     message: "Subcategory updated successfully",
     data: { subcategory },
   });
@@ -164,17 +73,10 @@ const updateSubcategory = asyncWrapper(async (req, res, next) => {
 const deleteSubcategory = asyncWrapper(async (req, res, next) => {
   const { id } = req.params;
 
-  const subcategory = await SubcategoryModel.findByIdAndDelete(id).populate({
-    path: "category",
-    select: "-createdAt -updatedAt",
-  });
-
-  if (!subcategory) {
-    return next(new ApiError(404, "Subcategory not found"));
-  }
+  const { subcategory } = await deleteSubcategoryService(id);
 
   res.status(200).json({
-    success: true,
+    status: httpStatusText.SUCCESS,
     message: "Subcategory deleted successfully",
     data: { subcategory },
   });

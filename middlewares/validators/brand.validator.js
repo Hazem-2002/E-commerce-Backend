@@ -4,28 +4,23 @@ const {
   limitFieldsRule,
 } = require("./common/validationRules");
 
-const createBrandValidator = [
-  nameRule("Brand", 2, 50).bail({ level: "request" }),
-];
+const createBrandValidator = [nameRule("name", "Brand name", 2, 50)];
 
-const getBrandsValidator = [
-  limitFieldsRule("Brands").bail({ level: "request" }),
-];
+const getBrandsValidator = [limitFieldsRule("fields", "Brand fields")];
 
-const getBrandByIdValidator = [mongoIdRule("id").bail({ level: "request" })];
+const getBrandByIdValidator = [mongoIdRule("id", "Brand ID")];
 
 const updateBrandValidator = [
-  mongoIdRule("id").bail({ level: "request" }),
-  nameRule("Brand", 2, 50).optional().bail({ level: "request" }),
+  mongoIdRule("id", "Brand ID"),
+  nameRule("name", "Brand name", 2, 50).optional(),
 ];
 
-const deleteBrandValidator = [mongoIdRule("id").bail({ level: "request" })];
+const deleteBrandValidator = [mongoIdRule("id", "Brand ID")];
 
 module.exports = {
   createBrandValidator,
   getBrandsValidator,
+  getBrandByIdValidator,
   updateBrandValidator,
-  getBrandByIdValidator,
-  getBrandByIdValidator,
   deleteBrandValidator,
 };

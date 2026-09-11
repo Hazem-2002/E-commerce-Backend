@@ -15,68 +15,65 @@ const {
 } = require("./common/validationRules");
 
 const registerValidator = [
-  nameRule("User", 3, 50).bail({ level: "request" }),
-  phoneRule().bail({ level: "request" }),
-  emailRule()
+  nameRule("name", "User name", 3, 50),
+  phoneRule("phone", "User phone"),
+  emailRule("email", "User email")
     .bail()
     .custom(async (value) => {
       const user = await usersModel.findOne({ email: value });
       if (user) {
-        return Promise.reject(new ApiError(400, "Email already exists"));
+        return Promise.reject(
+          new ApiError(
+            400,
+            "Email already exists. Please choose a different email.",
+          ),
+        );
       }
-    })
-    .bail({ level: "request" }),
-  passwordRule().bail({ level: "request" }),
-  confirmPasswordRule().bail({ level: "request" }),
+    }),
+  passwordRule("password", "User password"),
+  confirmPasswordRule("confirmPassword", "password", "Confirm Password"),
 ];
 
 const changeRoleValidator = [
-  mongoIdRule("id").bail({ level: "request" }),
-  roleRule().bail({ level: "request" }),
+  mongoIdRule("id", "User ID"),
+  roleRule("role", "User role"),
 ];
 
-const transferRoleValidator = [mongoIdRule("id").bail({ level: "request" })];
+const transferRoleValidator = [mongoIdRule("id", "User ID")];
 
 const verifyEmailValidator = [
-  emailRule().bail({ level: "request" }),
-  otpRule().bail({ level: "request" }),
+  emailRule("email", "User email"),
+  otpRule("otp", "OTP"),
 ];
 
-const resendVerificationEmailValidator = [
-  emailRule().bail({ level: "request" }),
-];
+const resendVerificationEmailValidator = [emailRule("email", "User email")];
 
 const changeUserPasswordValidator = [
-  currentPasswordRule("currentPassword").bail({ level: "request" }),
-  passwordRule("newPassword")
+  currentPasswordRule("currentPassword", "Current Password"),
+  passwordRule("newPassword", "New Password")
     .bail()
     .custom((value, { req }) => {
       if (value === req.body.currentPassword) {
         return Promise.reject(
           new ApiError(
             400,
-            "New password cannot be the same as the old password",
+            "New password cannot be the same as the current password. Please choose a different password.",
           ),
         );
       }
 
       return true;
-    })
-    .bail({ level: "request" }),
-  confirmPasswordRule("confirmPassword", "newPassword").bail({
-    level: "request",
-  }),
+    }),
+  confirmPasswordRule("confirmPassword", "newPassword"),
 ];
 
-const forgotPasswordValidator = [emailRule().bail({ level: "request" })];
+const forgotPasswordValidator = [emailRule("email", "User email")];
 
-const verifyPasswordResetOTPValidator = [otpRule().bail({ level: "request" })];
+const verifyPasswordResetOTPValidator = [otpRule("otp", "OTP")];
 
 const resetPasswordValidator = [
-  passwordRule("newPassword").bail({ level: "request" }),
-  confirmPasswordRule("confirmPassword", "newPassword").bail({
-    level: "request",
-  }),
+  passwordRule("newPassword", "New Password"),
+  confirmPasswordRule("confirmPassword", "newPassword", "Confirm Password"),
 ];
 
 module.exports = {

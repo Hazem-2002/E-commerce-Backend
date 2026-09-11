@@ -9,7 +9,9 @@ const authenticate = async (req, res, next) => {
     const token = req.header("Authorization")?.replace("Bearer ", "");
 
     if (!token) {
-      return next(new ApiError(401, "Access denied. No token provided."));
+      return next(
+        new ApiError(401, "Access denied. No token provided. Please log in."),
+      );
     }
 
     const decoded = jwt.verify(token, process.env.JWT_ACCESS_SECRET);
@@ -19,7 +21,12 @@ const authenticate = async (req, res, next) => {
     );
 
     if (!user) {
-      return next(new ApiError(401, "Access denied. User not found."));
+      return next(
+        new ApiError(
+          401,
+          "Authorization failed. User not found. Please log in again.",
+        ),
+      );
     }
 
     if (
@@ -39,7 +46,7 @@ const authenticate = async (req, res, next) => {
 
     next();
   } catch (err) {
-    return next(new ApiError(401, "Invalid token."));
+    return next(new ApiError(401, "Invalid token. Please log in again."));
   }
 };
 

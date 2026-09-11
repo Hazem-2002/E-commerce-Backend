@@ -7,6 +7,7 @@ const categoryRouter = require("./routers/category.router");
 const subcategoryRouter = require("./routers/subcategory.router");
 const BrandsRouter = require("./routers/brand.router");
 const productRouter = require("./routers/product.router");
+const reviewRouter = require("./routers/review.router");
 const globalErrorHandler = require("./middlewares/globalErrorHandler");
 const cookieParser = require("cookie-parser");
 const cors = require("cors");
@@ -33,6 +34,7 @@ app.use("/api/v1/categories", categoryRouter);
 app.use("/api/v1/subcategories", subcategoryRouter);
 app.use("/api/v1/brands", BrandsRouter);
 app.use("/api/v1/products", productRouter);
+app.use("/api/v1/reviews", reviewRouter);
 app.all("/*splat", (req, res, next) => {
   return next(
     new apiError(404, `Can't find ${req.originalUrl} on this server!`),

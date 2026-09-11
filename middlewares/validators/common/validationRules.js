@@ -10,47 +10,54 @@ const SubcategoryModel = require("../../../models/subcategory.model");
 const BrandModel = require("../../../models/brand.madel");
 const ProductModel = require("../../../models/product.model");
 
-const nameRule = (fieldName, min = 3, max = 50) =>
-  body("name")
+const nameRule = (fieldName = "name", typeName = "Name", min = 3, max = 50) =>
+  body(fieldName)
     .exists()
-    .withMessage(`${fieldName} name is required`)
+    .withMessage(`${typeName} is required`)
     .bail()
     .notEmpty()
-    .withMessage(`${fieldName} name cannot be empty`)
+    .withMessage(`${typeName} cannot be empty`)
     .bail()
     .isString()
-    .withMessage(`${fieldName} name must be a string`)
+    .withMessage(`${typeName} must be a string`)
     .bail()
     .trim()
     .isLength({ min: min, max: max })
     .withMessage(
-      `${fieldName} name must be between ${min} and ${max} characters long`,
-    );
+      `${typeName} must be between ${min} and ${max} characters long`,
+    )
+    .bail({ level: "request" });
 
-const descriptionRule = (fieldName, min = 10, max = 200) =>
-  body("description")
+const descriptionRule = (
+  fieldName = "description",
+  typeName = "Description",
+  min = 10,
+  max = 200,
+) =>
+  body(fieldName)
     .exists()
-    .withMessage(`${fieldName} description is required`)
+    .withMessage(`${typeName} is required`)
     .bail()
     .notEmpty()
-    .withMessage(`${fieldName} description cannot be empty`)
+    .withMessage(`${typeName} cannot be empty`)
     .bail()
     .isString()
-    .withMessage(`${fieldName} description must be a string`)
+    .withMessage(`${typeName} must be a string`)
     .bail()
     .trim()
     .isLength({ min: min, max: max })
     .withMessage(
-      `${fieldName} description must be between ${min} and ${max} characters long`,
-    );
+      `${typeName} must be between ${min} and ${max} characters long`,
+    )
+    .bail({ level: "request" });
 
-const phoneRule = () =>
-  body("phone")
+const phoneRule = (fieldName = "phone", typeName = "Phone") =>
+  body(fieldName)
     .exists()
-    .withMessage("Phone is required")
+    .withMessage(`${typeName} is required`)
     .bail()
     .notEmpty()
-    .withMessage("Phone cannot be empty")
+    .withMessage(`${typeName} cannot be empty`)
     .bail()
     .trim()
     .isMobilePhone([
@@ -63,149 +70,179 @@ const phoneRule = () =>
       "ar-BH",
       "ar-AE",
     ])
-    .withMessage("Please enter a valid phone number");
+    .withMessage(
+      `${typeName} must be a valid phone number in the specified format`,
+    )
+    .bail({ level: "request" });
 
-const emailRule = () =>
-  body("email")
+const emailRule = (fieldName = "email", typeName = "Email") =>
+  body(fieldName)
     .exists()
-    .withMessage("Email is required")
+    .withMessage(`${typeName} is required`)
     .bail()
     .notEmpty()
-    .withMessage("Email cannot be empty")
+    .withMessage(`${typeName} cannot be empty`)
     .bail()
     .trim()
     .isEmail()
-    .withMessage("Please enter a valid email address");
-    
-const passwordRule = (fieldName = "password") =>
+    .withMessage(`${typeName} must be a valid email address`)
+    .bail({ level: "request" });
+
+const passwordRule = (fieldName = "password", typeName = "Password") =>
   body(fieldName)
     .exists()
-    .withMessage(`Password is required`)
+    .withMessage(`${typeName} is required`)
     .bail()
     .notEmpty()
-    .withMessage(`Password cannot be empty`)
+    .withMessage(`${typeName} cannot be empty`)
     .bail()
     .isLength({ min: 6 })
-    .withMessage(`Password must be at least 6 characters long`);
+    .withMessage(`${typeName} must be at least 6 characters long`)
+    .bail({ level: "request" });
 
-const currentPasswordRule = (fieldName = "currentPassword") =>
+const currentPasswordRule = (
+  fieldName = "currentPassword",
+  typeName = "Current Password",
+) =>
   body(fieldName)
     .exists()
-    .withMessage(`Current Password is required`)
+    .withMessage(`${typeName} is required`)
     .bail()
     .notEmpty()
-    .withMessage(`Current Password cannot be empty`)
+    .withMessage(`${typeName} cannot be empty`)
     .bail()
     .custom(async (value, { req }) => {
       const user = await UsersModel.findById(req.user._id).select("+password");
 
       if (!user) {
-        return Promise.reject(new ApiError(404, "User not found"));
+        return Promise.reject(
+          new ApiError(404, "No user found with the provided ID."),
+        );
       }
 
       const isMatch = await bcrypt.compare(value, user.password);
       if (!isMatch) {
         return Promise.reject(
-          new ApiError(400, "Current password is incorrect"),
+          new ApiError(
+            400,
+            `${typeName} is incorrect. Please provide the correct current password.`,
+          ),
         );
       }
 
       req.user = user;
 
       return true;
-    });
+    })
+    .bail({ level: "request" });
 
 const confirmPasswordRule = (
   fieldName = "confirmPassword",
   passwordField = "password",
+  typeName = "Confirm Password",
 ) =>
   body(fieldName)
     .exists()
-    .withMessage(`Confirm Password is required`)
+    .withMessage(`${typeName} is required`)
     .bail()
     .notEmpty()
-    .withMessage(`Confirm Password cannot be empty`)
+    .withMessage(`${typeName} cannot be empty`)
     .bail()
     .custom((value, { req }) => {
       if (value !== req.body[passwordField]) {
         return Promise.reject(
-          new ApiError(400, `Confirm Password does not match`),
+          new ApiError(
+            400,
+            `${typeName} does not match the ${passwordField}. Please ensure both fields are identical.`,
+          ),
         );
       }
       return true;
-    });
+    })
+    .bail({ level: "request" });
 
-const roleRule = () =>
-  body("role")
+const roleRule = (fieldName = "role", typeName = "Role") =>
+  body(fieldName)
     .exists()
-    .withMessage("Role is required")
+    .withMessage(`${typeName} is required`)
+    .bail()
+    .notEmpty()
+    .withMessage(`${typeName} cannot be empty`)
     .bail()
     .trim()
     .isIn(["user", "admin", "super-admin"])
-    .withMessage("Role must be either 'user', 'admin', or 'super-admin'");
+    .withMessage(`${typeName} must be either 'user', 'admin', or 'super-admin'`)
+    .bail({ level: "request" });
 
-const otpRule = () =>
-  body("otp")
+const otpRule = (fieldName = "otp", typeName = "OTP") =>
+  body(fieldName)
+    .exists()
+    .withMessage(`${typeName} is required`)
+    .bail()
     .notEmpty()
-    .withMessage("OTP is required")
+    .withMessage(`${typeName} cannot be empty`)
     .bail()
     .isString()
-    .withMessage("OTP must be a string")
+    .withMessage(`${typeName} must be a string`)
     .bail()
     .trim()
     .isLength({ min: 6, max: 6 })
-    .withMessage("OTP must be a 6-digit number");
+    .withMessage(`${typeName} must be a 6-digit number`)
+    .bail({ level: "request" });
 
-const mongoIdRule = (fieldName) =>
+const mongoIdRule = (fieldName = "id", typeName = "ID") =>
   check(fieldName)
     .exists()
-    .withMessage(`${fieldName} is required`)
+    .withMessage(`${typeName} is required`)
     .bail()
     .notEmpty()
-    .withMessage(`${fieldName} cannot be empty`)
+    .withMessage(`${typeName} cannot be empty`)
     .bail()
     .isMongoId()
-    .withMessage(`${fieldName} must be a valid MongoDB ObjectId`);
+    .withMessage(`${typeName} must be a valid MongoDB ObjectId`)
+    .bail({ level: "request" });
 
-const mongoIdArrayRule = (fieldName) =>
+const mongoIdArrayRule = (fieldName, typeName) =>
   body(fieldName)
     .isArray({ min: 0 })
-    .withMessage(`${fieldName} must be an array`)
+    .withMessage(`${typeName} must be an array of MongoDB ObjectIds`)
     .bail()
     .custom((ids) => {
-      if (!Array.isArray(ids)) {
-        return Promise.reject(
-          new ApiError(400, `${fieldName} must be an array`),
-        );
-      }
-
       for (const id of ids) {
         if (!mongoose.Types.ObjectId.isValid(id)) {
           return Promise.reject(
             new ApiError(
               400,
-              `${fieldName} must contain valid MongoDB ObjectIds`,
+              `${typeName} contains an invalid MongoDB ObjectId: ${id}`,
             ),
           );
         }
       }
       return true;
-    });
+    })
+    .bail({ level: "request" });
 
-const categoryIdRule = (fieldName) =>
-  mongoIdRule(fieldName)
+const categoryIdRule = (fieldName = "category", typeName = "Category") =>
+  mongoIdRule(fieldName, typeName)
     .bail()
     .custom(async (categoryId) => {
       const categoryExists = await CategoryModel.findById(categoryId);
       if (!categoryExists) {
         return Promise.reject(
-          new ApiError(400, `Category with ID ${categoryId} does not exist`),
+          new ApiError(
+            400,
+            `${typeName} with ID ${categoryId} does not exist.`,
+          ),
         );
       }
-    });
+    })
+    .bail({ level: "request" });
 
-const subcategoryIdRule = (fieldName) =>
-  mongoIdArrayRule(fieldName)
+const subcategoryIdRule = (
+  fieldName = "subcategories",
+  typeName = "Subcategories",
+) =>
+  mongoIdArrayRule(fieldName, typeName)
     .bail()
     .customSanitizer((subcategories) => {
       return [...new Set(subcategories.map(String))];
@@ -219,7 +256,10 @@ const subcategoryIdRule = (fieldName) =>
         });
         if (subcategoriesExist.length !== subcategories.length) {
           return Promise.reject(
-            new ApiError(400, "One or more subcategories do not exist"),
+            new ApiError(
+              400,
+              `One or more subcategories do not exist. Please provide valid subcategory IDs.`,
+            ),
           );
         }
 
@@ -231,7 +271,12 @@ const subcategoryIdRule = (fieldName) =>
             .lean();
 
           if (!product) {
-            return Promise.reject(new ApiError(404, "Product not found"));
+            return Promise.reject(
+              new ApiError(
+                404,
+                "Product not found. Please provide a valid product ID.",
+              ),
+            );
           }
 
           req.body.category = product.category.toString();
@@ -245,93 +290,124 @@ const subcategoryIdRule = (fieldName) =>
           return Promise.reject(
             new ApiError(
               400,
-              "One or more subcategories do not belong to the specified category",
+              "One or more subcategories do not belong to the specified category. Please ensure that all subcategories are associated with the correct category.",
             ),
           );
         }
       }
       return true;
-    });
+    })
+    .bail({ level: "request" });
 
-const brandIdRule = (fieldName) =>
-  mongoIdRule(fieldName)
+const brandIdRule = (fieldName = "brand", typeName = "Brand") =>
+  mongoIdRule(fieldName, typeName)
     .bail()
     .custom(async (brandId) => {
       const brandExists = await BrandModel.findById(brandId);
       if (!brandExists) {
         return Promise.reject(
-          new ApiError(400, `Brand with ID ${brandId} does not exist`),
+          new ApiError(400, `${typeName} with ID ${brandId} does not exist.`),
         );
       }
-    });
+    })
+    .bail({ level: "request" });
 
-const quantityRule = (fieldName) =>
-  body("quantity")
+const quantityRule = (fieldName = "quantity", typeName = "Quantity") =>
+  body(fieldName)
     .exists()
-    .withMessage(`${fieldName} quantity is required`)
+    .withMessage(`${typeName} is required`)
     .bail()
     .notEmpty()
-    .withMessage(`${fieldName} quantity cannot be empty`)
+    .withMessage(`${typeName} cannot be empty`)
     .bail()
     .isInt({ gt: 0 })
-    .withMessage(`${fieldName} quantity must be a positive integer`);
+    .withMessage(`${typeName} must be a positive integer`)
+    .bail({ level: "request" });
 
-const priceRule = (fieldName) =>
-  body("price")
+const priceRule = (fieldName = "price", typeName = "Price") =>
+  body(fieldName)
     .exists()
-    .withMessage(`${fieldName} price is required`)
+    .withMessage(`${typeName} is required`)
     .bail()
     .notEmpty()
-    .withMessage(`${fieldName} price cannot be empty`)
+    .withMessage(`${typeName} cannot be empty`)
     .bail()
     .isFloat({ gt: 0 })
-    .withMessage(`${fieldName} price must be a positive number`);
+    .withMessage(`${typeName} must be a positive number`)
+    .bail({ level: "request" });
 
-const priceAfterDiscountRule = (fieldName) =>
-  body("priceAfterDiscount")
-    .optional()
+const priceAfterDiscountRule = (
+  fieldName = "priceAfterDiscount",
+  typeName = "Price after discount",
+) =>
+  body(fieldName)
+    .exists()
+    .withMessage(`${typeName} is required`)
+    .bail()
     .notEmpty()
-    .withMessage(`${fieldName} price after discount cannot be empty`)
+    .withMessage(`${typeName} cannot be empty`)
     .bail()
     .isFloat({ gt: 0 })
-    .withMessage(`${fieldName} price after discount must be a positive number`);
+    .withMessage(`${typeName} must be a positive number`)
+    .bail()
+    .custom((value, { req }) => {
+      if (value >= req.body.price) {
+        return Promise.reject(
+          new ApiError(
+            400,
+            `${typeName} must be less than the original price. Please provide a valid discounted price.`,
+          ),
+        );
+      }
+      return true;
+    })
+    .bail({ level: "request" });
 
-const colorsRule = (fieldName) =>
-  body("colors")
+const colorsRule = (fieldName = "colors", typeName = "Colors") =>
+  body(fieldName)
     .exists()
-    .withMessage(`${fieldName} colors are required`)
+    .withMessage(`${typeName} are required`)
     .bail()
     .notEmpty()
-    .withMessage(`${fieldName} colors cannot be empty`)
+    .withMessage(`${typeName} cannot be empty`)
     .bail()
     .isArray({ min: 1 })
-    .withMessage(`${fieldName} colors must be an array with at least one color`)
+    .withMessage(`${typeName} must be an array with at least one color`)
     .bail()
     .custom((colors, { req }) => {
       for (const color of colors) {
         if (!color.hex || !color.quantity) {
           return Promise.reject(
-            new Error(
-              `${fieldName} color must have 'hex', and 'quantity' properties`,
+            new ApiError(
+              400,
+              `${typeName} must contain both 'hex' and 'quantity' fields for each color.`,
             ),
           );
         }
-        if (typeof color.color !== "string" || color.color.trim() === "") {
+        if (
+          color.color &&
+          (typeof color.color !== "string" || color.color.trim() === "")
+        ) {
           return Promise.reject(
-            new Error(`${fieldName} color 'color' must be a non-empty string`),
+            new ApiError(
+              400,
+              `'color' field in each color of ${typeName} must be a non-empty string if provided.`,
+            ),
           );
         }
         if (!/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/.test(color.hex)) {
           return Promise.reject(
-            new Error(
-              `${fieldName} color 'hex' must be a valid hex color code`,
+            new ApiError(
+              400,
+              `'hex' field in each color of ${typeName} must be a valid hex color code.`,
             ),
           );
         }
         if (!Number.isInteger(color.quantity) || color.quantity < 0) {
           return Promise.reject(
-            new Error(
-              `${fieldName} color 'quantity' must be a non-negative integer`,
+            new ApiError(
+              400,
+              `'quantity' field in each color of ${typeName} must be a non-negative integer.`,
             ),
           );
         }
@@ -339,7 +415,10 @@ const colorsRule = (fieldName) =>
 
       if (!req.body.quantity) {
         return Promise.reject(
-          new Error(`please provide ${fieldName} quantity`),
+          new ApiError(
+            400,
+            `${typeName} validation requires the product quantity to be specified. Please provide the product quantity.`,
+          ),
         );
       }
 
@@ -350,54 +429,109 @@ const colorsRule = (fieldName) =>
 
       if (totalQuantity !== +req.body.quantity) {
         return Promise.reject(
-          new Error(
-            `${fieldName} total color quantities (${totalQuantity}) must equal the product quantity (${req.body.quantity})`,
+          new ApiError(
+            400,
+            `The total quantity of all colors (${totalQuantity}) does not match the product quantity (${req.body.quantity}). Please ensure that the sum of color quantities equals the product quantity.`,
           ),
         );
       }
 
       return true;
-    });
+    })
+    .bail({ level: "request" });
 
-const ratingsAverageRule = (fieldName) =>
-  body("ratingsAverage")
-    .optional()
+const ratingRule = (fieldName = "rating", typeName = "Rating") =>
+  body(fieldName)
+    .exists()
+    .withMessage(`${typeName} is required`)
+    .bail()
     .notEmpty()
-    .withMessage(`${fieldName} ratingsAverage cannot be empty`)
+    .withMessage(`${typeName} cannot be empty`)
     .bail()
     .isFloat({ min: 1, max: 5 })
-    .withMessage(`${fieldName} ratingsAverage must be between 1 and 5`);
+    .withMessage(`${typeName} must be between 1 and 5`)
+    .bail({ level: "request" });
 
-const ratingsQuantityRule = (fieldName) =>
-  body("ratingsQuantity")
-    .optional()
+const ratingsAverageRule = (
+  fieldName = "ratingsAverage",
+  typeName = "Ratings Average",
+) =>
+  body(fieldName)
+    .exists()
+    .withMessage(`${typeName} is required`)
+    .bail()
     .notEmpty()
-    .withMessage(`${fieldName} ratingsQuantity cannot be empty`)
+    .withMessage(`${typeName} cannot be empty`)
+    .bail()
+    .isFloat({ min: 1, max: 5 })
+    .withMessage(`${typeName} must be between 1 and 5`)
+    .bail({ level: "request" });
+
+const ratingsQuantityRule = (
+  fieldName = "ratingsQuantity",
+  typeName = "Ratings Quantity",
+) =>
+  body(fieldName)
+    .exists()
+    .withMessage(`${typeName} is required`)
+    .bail()
+    .notEmpty()
+    .withMessage(`${typeName} cannot be empty`)
     .bail()
     .isInt({ min: 0 })
-    .withMessage(`${fieldName} ratingsQuantity must be a non-negative integer`);
+    .withMessage(`${typeName} must be a non-negative integer`)
+    .bail({ level: "request" });
 
-const isFeaturedRule = (fieldName) =>
-  body("isFeatured")
-    .optional()
+const isFeaturedRule = (fieldName = "isFeatured", typeName = "Is Featured") =>
+  body(fieldName)
+    .exists()
+    .withMessage(`${typeName} is required`)
+    .bail()
     .notEmpty()
-    .withMessage(`${fieldName} isFeatured cannot be empty`)
+    .withMessage(`${typeName} cannot be empty`)
     .bail()
     .isBoolean()
-    .withMessage(`${fieldName} isFeatured must be a boolean value`);
+    .withMessage(`${typeName} must be a boolean value`)
+    .bail({ level: "request" });
 
-const soldRule = (fieldName) =>
-  body("sold")
-    .optional()
+const soldRule = (fieldName = "sold", typeName = "Sold") =>
+  body(fieldName)
+    .exists()
+    .withMessage(`${typeName} is required`)
+    .bail()
     .notEmpty()
-    .withMessage(`${fieldName} sold cannot be empty`)
+    .withMessage(`${typeName} cannot be empty`)
     .bail()
     .isInt({ min: 0 })
-    .withMessage(`${fieldName} sold must be a non-negative integer`);
+    .withMessage(`${typeName} must be a non-negative integer`)
+    .bail({ level: "request" });
 
-const limitFieldsRule = (fieldName) =>
-  check("fields")
+const commentRule = (fieldName = "comment", typeName = "Comment") =>
+  body(fieldName)
+    .exists()
+    .withMessage(`${typeName} is required`)
+    .bail()
+    .notEmpty()
+    .withMessage(`${typeName} cannot be empty`)
+    .bail()
+    .isString()
+    .withMessage(`${typeName} must be a string`)
+    .bail()
+    .trim()
+    .isLength({ min: 1 })
+    .withMessage(`${typeName} must be at least 1 character long`)
+    .bail({ level: "request" });
+
+const limitFieldsRule = (fieldName = "fields", typeName = "Limit Fields") =>
+  check(fieldName)
     .optional()
+    .notEmpty()
+    .withMessage(`${typeName} cannot be empty`)
+    .bail()
+    .isString()
+    .withMessage(`${typeName} must be a string`)
+    .bail()
+    .trim()
     .custom((value) => {
       // Check All is Exclusive or Inclusive
       const fields = value.split(",").map((field) => field.trim());
@@ -409,13 +543,14 @@ const limitFieldsRule = (fieldName) =>
         return Promise.reject(
           new ApiError(
             400,
-            `${fieldName} fields must be either all inclusive or all exclusive`,
+            `${typeName} cannot contain both inclusive and exclusive fields. Please provide either only inclusive fields or only exclusive fields.`,
           ),
         );
       }
 
       return true;
-    });
+    })
+    .bail({ level: "request" });
 
 module.exports = {
   nameRule,
@@ -436,9 +571,11 @@ module.exports = {
   priceRule,
   priceAfterDiscountRule,
   colorsRule,
+  ratingRule,
   ratingsAverageRule,
   ratingsQuantityRule,
   isFeaturedRule,
   soldRule,
+  commentRule,
   limitFieldsRule,
 };
