@@ -8,7 +8,9 @@ const authorize = require("../middlewares/authorize");
 const {
   getUsers,
   getUserById,
+  getUserReviews,
   getMe,
+  getMyReviews,
   updateUser,
   updateMe,
   deleteUser,
@@ -17,6 +19,7 @@ const {
 
 const {
   getUserByIdValidator,
+  getUserReviewsValidator,
   updateUserValidator,
   updateMeValidator,
   deleteUserValidator,
@@ -41,8 +44,10 @@ router
   )
   .delete(authenticate, deleteMe);
 
+router.route("/me/reviews").get(authenticate, getMyReviews);
+
 router
-  .route("/:id")
+  .route("/:userId")
   .get(
     authenticate,
     authorize("super-admin", "admin"),
@@ -65,5 +70,9 @@ router
     validate,
     deleteUser,
   );
+
+router
+  .route("/:userId/reviews")
+  .get(getUserReviewsValidator, validate, getUserReviews);
 
 module.exports = router;

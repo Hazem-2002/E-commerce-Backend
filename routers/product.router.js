@@ -1,5 +1,7 @@
 const express = require("express");
 
+const reviewRouter = require("./review.router");
+
 const authenticate = require("../middlewares/authenticate");
 const authorize = require("../middlewares/authorize");
 
@@ -26,6 +28,8 @@ const {
 } = require("../controllers/product.controller");
 
 const router = express.Router();
+
+router.use("/:productId/reviews", reviewRouter);
 
 router
   .route("/")

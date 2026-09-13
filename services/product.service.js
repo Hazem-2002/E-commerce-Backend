@@ -61,10 +61,7 @@ const getProductsService = async (query) => {
 };
 
 const getProductByIdService = async (id) => {
-  const product = await ProductModel.findById(id)
-    .populate({ path: "category", select: "name" })
-    .populate({ path: "brand", select: "name" })
-    .populate({ path: "subcategories", select: "name" });
+  const product = await ProductModel.findById(id);
 
   if (!product) {
     throw new ApiError(
@@ -72,6 +69,21 @@ const getProductByIdService = async (id) => {
       "Product not found. Please provide a valid product ID.",
     );
   }
+
+  await product.populate([
+    { path: "category", select: "name" },
+    { path: "brand", select: "name" },
+    { path: "subcategories", select: "name" },
+    {
+      path: "reviews",
+      select: "-_id rating comment user createdAt updatedAt -productId",
+      populate: {
+        path: "user",
+        select: "-_id name email",
+      },
+    },
+  ]);
+
   return product;
 };
 
@@ -134,6 +146,12 @@ const deleteProductService = async (id, session = null) => {
   }
 
   await deleteProductImages(product);
+
+  await product.populate([
+    { path: "category", select: "name" },
+    { path: "brand", select: "name" },
+    { path: "subcategories", select: "name" },
+  ]);
 
   return product;
 };

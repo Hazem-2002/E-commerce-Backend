@@ -1,6 +1,3 @@
-const ProductModel = require("../../models/product.model");
-const ApiError = require("../../utils/apiError");
-
 const {
   mongoIdRule,
   ratingRule,
@@ -8,22 +5,30 @@ const {
 } = require("./common/validationRules");
 
 const createReviewValidator = [
-  mongoIdRule("productId")
-    .bail()
-    .custom(async (value) => {
-      const product = await ProductModel.exists({ _id: value });
-
-      if (!product) {
-        return Promise.reject(
-          new ApiError(404, "The product with the given ID does not exist"),
-        );
-      }
-    })
-    .bail({ level: "request" }),
-  ratingRule("Rating").bail({ level: "request" }),
-  commentRule("Comment").bail({ level: "request" }).optional(),
+  mongoIdRule("productId", "Product ID"),
+  ratingRule("rating", "Rating"),
+  commentRule("comment", "Comment").optional(),
 ];
+
+const getReviewsValidator = [mongoIdRule("productId", "Product ID").optional()];
+
+const getReviewByIdValidator = [
+  mongoIdRule("productId", "Product ID").optional(),
+  mongoIdRule("id", "Review ID"),
+];
+
+const updateReviewValidator = [
+  mongoIdRule("id", "Review ID"),
+  ratingRule("rating", "Rating").optional(),
+  commentRule("comment", "Comment").optional(),
+];
+
+const deleteReviewValidator = [mongoIdRule("id", "Review ID")];
 
 module.exports = {
   createReviewValidator,
+  getReviewsValidator,
+  getReviewByIdValidator,
+  updateReviewValidator,
+  deleteReviewValidator,
 };

@@ -74,17 +74,34 @@ const usersSchema = new mongoose.Schema(
       default: false,
     },
   },
-  { timestamps: true },
+  {
+    timestamps: true,
+    toJSON: {
+      virtuals: true,
+      transform: (doc, ret) => {
+        delete ret.password;
+        delete ret.__v;
+
+        delete ret.image?.id;
+        delete ret.image?._id;
+        delete ret.id;
+
+        return ret;
+      },
+    },
+    toObject: { virtuals: true },
+  },
 );
 
-usersSchema.set("toJSON", {
-  transform: (doc, ret) => {
-    delete ret.password;
-    delete ret.__v;
-    return ret;
-  },
+// Virtual populate for reviews
+usersSchema.virtual("review", {
+  ref: "Review",
+  localField: "_id",
+  foreignField: "user",
+  justOne: true,
 });
 
+// Pre-save middleware to hash password if modified
 usersSchema.pre("save", async function () {
   if (this.isModified("password")) {
     this.password = await bcrypt.hash(this.password, 10);
@@ -112,11 +129,12 @@ usersSchema.pre(/update/i, function () {
   }
 });
 
+// Static method to validate user credentials
 usersSchema.statics.credentials = async function (email, password) {
   const user = await this.findOne({ email }).select("+password");
 
   if (!user || !(await bcrypt.compare(password, user.password))) {
-    throw new ApiError(401, "Invalid email or password");
+    throw new ApiError(400, "Invalid email or password");
   }
 
   return user;

@@ -1,4 +1,5 @@
 const UserModel = require("../models/users.model");
+const ReviewModel = require("../models/review.model");
 const RefreshTokenModel = require("../models/refreshToken.model");
 
 const ApiError = require("../utils/apiError");
@@ -39,8 +40,8 @@ const getUsersService = async (query) => {
   return { users, paginatedResults: apiFeatures.paginatedResults };
 };
 
-const getUserByIdService = async (id) => {
-  const user = await UserModel.findById(id);
+const getUserByIdService = async (userId) => {
+  const user = await UserModel.findById(userId);
 
   if (!user) {
     throw new ApiError(
@@ -51,8 +52,8 @@ const getUserByIdService = async (id) => {
   return user;
 };
 
-const updateUserService = async ({ id, updatedData, file }) => {
-  const user = await UserModel.findById(id);
+const updateUserService = async ({ userId, updatedData, file }) => {
+  const user = await UserModel.findById(userId);
 
   if (!user) {
     throw new ApiError(
@@ -76,8 +77,8 @@ const updateUserService = async ({ id, updatedData, file }) => {
   return user;
 };
 
-const deleteUserService = async (id, currentUser) => {
-  const user = await UserModel.findById(id);
+const deleteUserService = async (userId, currentUser) => {
+  const user = await UserModel.findById(userId);
 
   if (!user) {
     throw new ApiError(
@@ -86,7 +87,7 @@ const deleteUserService = async (id, currentUser) => {
     );
   }
 
-  const isOwner = currentUser._id.toString() === id.toString();
+  const isOwner = currentUser._id.toString() === userId.toString();
   const isSuperAdmin = user.role === "super-admin";
   const isAdmin = user.role === "admin";
 
@@ -109,9 +110,11 @@ const deleteUserService = async (id, currentUser) => {
         await handleAdminRoleTransition(session, "delete");
       }
 
-      await UserModel.findByIdAndDelete(id, { session });
+      await UserModel.findByIdAndDelete(userId, { session });
 
-      await RefreshTokenModel.deleteMany({ user: id }, { session });
+      await ReviewModel.deleteMany({ user: userId }, { session });
+
+      await RefreshTokenModel.deleteMany({ user: userId }, { session });
     });
   } finally {
     await session.endSession();

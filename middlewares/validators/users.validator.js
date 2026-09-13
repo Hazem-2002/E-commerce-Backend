@@ -7,18 +7,20 @@ const {
   emailRule,
 } = require("./common/validationRules");
 
-const getUserByIdValidator = [mongoIdRule("id", "User ID")];
+const getUserByIdValidator = [mongoIdRule("userId", "User ID")];
+
+const getUserReviewsValidator = [mongoIdRule("userId", "User ID")];
 
 const updateUserValidator = [
-  mongoIdRule("id", "User ID"),
+  mongoIdRule("userId", "User ID"),
   nameRule("name", "User name", 3, 50).optional(),
   phoneRule("phone", "User phone").optional(),
   emailRule("email", "User email")
     .bail()
     .custom(async (email, { req }) => {
-      const existingUser = req.params.id
+      const existingUser = req.params.userId
         ? await UsersModel.findOne({
-            _id: { $ne: req.params.id },
+            _id: { $ne: req.params.userId },
             email,
           })
         : await UsersModel.findOne({ email });
@@ -41,9 +43,9 @@ const updateMeValidator = [
   emailRule("email", "User email")
     .bail()
     .custom(async (email, { req }) => {
-      const existingUser = req.params.id
+      const existingUser = req.params.userId
         ? await UsersModel.findOne({
-            _id: { $ne: req.params.id },
+            _id: { $ne: req.params.userId },
             email,
           })
         : await UsersModel.findOne({ email });
@@ -60,10 +62,11 @@ const updateMeValidator = [
     .optional(),
 ];
 
-const deleteUserValidator = [mongoIdRule("id", "User ID")];
+const deleteUserValidator = [mongoIdRule("userId", "User ID")];
 
 module.exports = {
   getUserByIdValidator,
+  getUserReviewsValidator,
   updateUserValidator,
   updateMeValidator,
   deleteUserValidator,

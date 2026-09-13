@@ -46,7 +46,7 @@ const authenticate = async (req, res, next) => {
 
     next();
   } catch (err) {
-    return next(new ApiError(401, "Invalid token. Please log in again."));
+    return next(new ApiError(401, "Authorization failed. Invalid token. Please log in again."));
   }
 };
 

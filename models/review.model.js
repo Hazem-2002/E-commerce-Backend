@@ -26,6 +26,43 @@ const reviewSchema = new mongoose.Schema(
   { timestamps: true },
 );
 
+// Ensure that a user can only leave one review per product
+reviewSchema.index({ productId: 1, user: 1 }, { unique: true });
+
+reviewSchema.set("toJSON", {
+  transform: (doc, ret) => {
+    delete ret.__v;
+    return ret;
+  },
+});
+
+reviewSchema.statics.calculateRatings = async function (
+  productId,
+  session = null,
+) {
+  const query = this.aggregate([
+    { $match: { productId: productId } },
+    {
+      $group: {
+        _id: "$productId",
+        ratingsAverage: { $avg: "$rating" },
+        ratingsQuantity: { $sum: 1 },
+      },
+    },
+  ]);
+
+  if (session) {
+    query.session(session);
+  }
+
+  const result = await query;
+
+  return {
+    ratingsAverage: Math.round((result[0]?.ratingsAverage || 0) * 10) / 10,
+    ratingsQuantity: result[0]?.ratingsQuantity || 0,
+  };
+};
+
 const ReviewModel = mongoose.model("Review", reviewSchema);
 
 module.exports = ReviewModel;

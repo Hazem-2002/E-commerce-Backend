@@ -1,42 +1,104 @@
 const asyncWrapper = require("../utils/asyncWrapper");
-const ApiError = require("../utils/apiError");
 const httpStatusText = require("../utils/httpStatusText");
+const ApiError = require("../utils/apiError");
 
-const ApiFeatures = require("../utils/apiFeatures");
+const {
+  createReviewService,
+  getReviewsService,
+  getReviewByIdService,
+  updateReviewService,
+  deleteReviewService,
+} = require("../services/review.service");
 
-const ReviewModel = require("../models/review.model");
+const createReview = asyncWrapper(async (req, res, next) => {
+  const reviewData = req.body;
+  reviewData.user = req.user._id;
+
+  if (req.params.productId && !reviewData.productId) {
+    reviewData.productId = req.params.productId;
+  }
+
+  const review = await createReviewService(reviewData);
+
+  res.status(201).json({
+    status: httpStatusText.SUCCESS,
+    message: "Review created successfully",
+    data: { review },
+  });
+});
 
 const getReviews = asyncWrapper(async (req, res, next) => {
-  const apiFeatures = new ApiFeatures(ReviewModel.find(), req.query);
-
-  apiFeatures
-    .filter()
-    .search()
-    .paginate(await ReviewModel.countDocuments(apiFeatures.filters))
-    .sort()
-    .limitFields();
-
-  const reviews = await apiFeatures.query;
+  const { reviews, paginatedResults } = await getReviewsService({
+    query: req.query,
+    productId: req.params.productId,
+  });
 
   res.status(200).json({
     status: httpStatusText.SUCCESS,
-    ...apiFeatures.paginatedResults,
+    ...paginatedResults,
     data: { reviews },
   });
 });
 
-const createReview = asyncWrapper(async (req, res, next) => {
-  req.body.user = req.user._id;
+const getReviewById = asyncWrapper(async (req, res, next) => {
+  const { id, productId } = req.params;
 
-  const review = await ReviewModel.create(req.body);
+  const review = await getReviewByIdService(id, productId);
 
-  res.status(201).json({
+  res.status(200).json({
     status: httpStatusText.SUCCESS,
     data: { review },
   });
 });
 
+const updateReview = asyncWrapper(async (req, res, next) => {
+  const { id } = req.params;
+
+  if (
+    (!req.body || Object.keys(req.body).length === 0) &&
+    !req.body?.comment &&
+    !req.body?.rating
+  ) {
+    return next(
+      new ApiError(
+        400,
+        "No data provided for update. Please provide at least one field to update.",
+      ),
+    );
+  }
+
+  const updatedReview = await updateReviewService({
+    reviewId: id,
+    updateData: req.body,
+    userId: req.user._id,
+  });
+
+  res.status(200).json({
+    status: httpStatusText.SUCCESS,
+    message: "Review updated successfully",
+    data: { review: updatedReview },
+  });
+});
+
+const deleteReview = asyncWrapper(async (req, res, next) => {
+  const { id } = req.params;
+
+  const deletedReview = await deleteReviewService({
+    reviewId: id,
+    user: req.user,
+  });
+
+  res.status(200).json({
+    status: httpStatusText.SUCCESS,
+    message: "Review deleted successfully",
+    data: { review: deletedReview },
+  });
+});
+
 module.exports = {
-  getReviews,
   createReview,
+  getReviews,
+  getReviewById,
+  updateReview,
+  deleteReview,
 };

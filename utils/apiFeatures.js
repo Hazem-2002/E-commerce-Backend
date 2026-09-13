@@ -74,6 +74,7 @@ class ApiFeatures {
 
     const selectedFields = queryFields ? queryFields : excludeFields;
 
+    this.fields = this.fields ? this.fields : excludeFields;
     this.query = this.query.select(selectedFields);
 
     return this;
@@ -93,20 +94,37 @@ class ApiFeatures {
 
     if (fields.length > 0 && fieldSelectionType === "inclusion") {
       for (const field of fields) {
-        if (fieldsToPopulate.includes(field)) {
-          this.query.populate({
-            path: fieldSelectionType === "inclusion" ? field : field.slice(1),
-            select: excludeFields ? excludeFields : "name",
-          });
+        for (const item of fieldsToPopulate) {
+          if (typeof item === "string" && item.toLowerCase() === field) {
+            this.query.populate({
+              path: item,
+              select: excludeFields ? excludeFields : "name",
+            });
+            break;
+          } else if (
+            typeof item === "object" &&
+            item.path.toLowerCase() === field
+          ) {
+            this.query.populate(item);
+            break;
+          }
         }
       }
     } else {
-      for (const field of fieldsToPopulate) {
-        if (fields.length === 0 || !fields.includes(`-${field}`)) {
-          this.query.populate({
-            path: field,
-            select: excludeFields ? excludeFields : "name",
-          });
+      for (const item of fieldsToPopulate) {
+        const field = typeof item === "string" ? item : item.path;
+        if (
+          fields.length === 0 ||
+          !fields.includes(`-${field.toLowerCase()}`)
+        ) {
+          if (typeof item === "string") {
+            this.query.populate({
+              path: field,
+              select: excludeFields || "name",
+            });
+          } else {
+            this.query.populate(item);
+          }
         }
       }
     }

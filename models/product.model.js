@@ -128,8 +128,41 @@ const productSchema = new mongoose.Schema(
       default: false,
     },
   },
-  { timestamps: true },
+  {
+    timestamps: true,
+
+    toJSON: {
+      virtuals: true,
+      transform: (doc, ret) => {
+        delete ret.__v;
+        delete ret.id;
+
+        delete ret.productCover?.id;
+        delete ret.productCover?._id;
+
+        ret.colors?.forEach((color) => {
+          delete color.id;
+          delete color._id;
+        });
+
+        ret.productImages?.forEach((image) => {
+          delete image.id;
+          delete image._id;
+        });
+
+        return ret;
+      },
+    },
+
+    toObject: { virtuals: true },
+  },
 );
+
+productSchema.virtual("reviews", {
+  ref: "Review",
+  localField: "_id",
+  foreignField: "productId",
+});
 
 // Pre-save middleware to generate slug from name
 productSchema.pre("validate", function () {
@@ -144,14 +177,6 @@ productSchema.pre(/update/i, function () {
   if (update.name) {
     update.slug = slugify(update.name, { lower: true });
   }
-});
-
-// toJSON transformation to remove __v field
-productSchema.set("toJSON", {
-  transform: (doc, ret) => {
-    delete ret.__v;
-    return ret;
-  },
 });
 
 const ProductModel = mongoose.model("Product", productSchema);
