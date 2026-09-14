@@ -11,6 +11,8 @@ const {
   deleteUserService,
 } = require("../services/users.service");
 
+const { getUserWishlistService } = require("../services/wishlist.service");
+
 const getUsers = AsyncWrapper(async (req, res, next) => {
   const { users, paginatedResults } = await getUsersService(req.query);
 
@@ -54,6 +56,19 @@ const getMyReviews = AsyncWrapper(async (req, res, next) => {
   });
 });
 
+const getMyWishlist = AsyncWrapper(async (req, res, next) => {
+  const { wishlistItems, paginatedResults } = await getUserWishlistService(
+    req.query,
+    req.user._id,
+  );
+
+  res.status(200).json({
+    status: httpStatusText.SUCCESS,
+    ...paginatedResults,
+    data: { wishlist: wishlistItems },
+  });
+});
+
 const getUserReviews = AsyncWrapper(async (req, res, next) => {
   const { reviews, paginatedResults } = await getReviewsService({
     query: req.query,
@@ -64,6 +79,19 @@ const getUserReviews = AsyncWrapper(async (req, res, next) => {
     status: httpStatusText.SUCCESS,
     ...paginatedResults,
     data: { reviews },
+  });
+});
+
+const getUserWishlist = AsyncWrapper(async (req, res, next) => {
+  const { wishlistItems, paginatedResults } = await getUserWishlistService(
+    req.query,
+    req.params.userId,
+  );
+
+  res.status(200).json({
+    status: httpStatusText.SUCCESS,
+    ...paginatedResults,
+    data: { wishlist: wishlistItems },
   });
 });
 
@@ -142,7 +170,9 @@ module.exports = {
   getUserById,
   getMe,
   getMyReviews,
+  getMyWishlist,
   getUserReviews,
+  getUserWishlist,
   updateUser,
   updateMe,
   deleteUser,

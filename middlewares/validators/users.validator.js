@@ -11,6 +11,8 @@ const getUserByIdValidator = [mongoIdRule("userId", "User ID")];
 
 const getUserReviewsValidator = [mongoIdRule("userId", "User ID")];
 
+const getUserWishlistValidator = [mongoIdRule("userId", "User ID")];
+
 const updateUserValidator = [
   mongoIdRule("userId", "User ID"),
   nameRule("name", "User name", 3, 50).optional(),
@@ -67,6 +69,7 @@ const deleteUserValidator = [mongoIdRule("userId", "User ID")];
 module.exports = {
   getUserByIdValidator,
   getUserReviewsValidator,
+  getUserWishlistValidator,
   updateUserValidator,
   updateMeValidator,
   deleteUserValidator,

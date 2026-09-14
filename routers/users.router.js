@@ -11,6 +11,8 @@ const {
   getUserReviews,
   getMe,
   getMyReviews,
+  getMyWishlist,
+  getUserWishlist,
   updateUser,
   updateMe,
   deleteUser,
@@ -20,6 +22,7 @@ const {
 const {
   getUserByIdValidator,
   getUserReviewsValidator,
+  getUserWishlistValidator,
   updateUserValidator,
   updateMeValidator,
   deleteUserValidator,
@@ -45,6 +48,8 @@ router
   .delete(authenticate, deleteMe);
 
 router.route("/me/reviews").get(authenticate, getMyReviews);
+
+router.route("/me/wishlist").get(authenticate, getMyWishlist);
 
 router
   .route("/:userId")
@@ -74,5 +79,15 @@ router
 router
   .route("/:userId/reviews")
   .get(getUserReviewsValidator, validate, getUserReviews);
+
+router
+  .route("/:userId/wishlist")
+  .get(
+    authenticate,
+    authorize("super-admin", "admin"),
+    getUserWishlistValidator,
+    validate,
+    getUserWishlist,
+  );
 
 module.exports = router;

@@ -1,5 +1,8 @@
 const UserModel = require("../models/users.model");
 const ReviewModel = require("../models/review.model");
+const WishListModel = require("../models/wishlist.model");
+const WishListItemModel = require("../models/wishlistItem.model");
+const AddressModel = require("../models/address.model");
 const RefreshTokenModel = require("../models/refreshToken.model");
 
 const ApiError = require("../utils/apiError");
@@ -110,11 +113,25 @@ const deleteUserService = async (userId, currentUser) => {
         await handleAdminRoleTransition(session, "delete");
       }
 
-      await UserModel.findByIdAndDelete(userId, { session });
+      const wishlist = await WishListModel.findOne({ user: userId }).session(
+        session,
+      );
+
+      if (wishlist) {
+        await WishListItemModel.deleteMany(
+          { wishlist: wishlist._id },
+          { session },
+        );
+        await WishListModel.findByIdAndDelete(wishlist._id, { session });
+      }
 
       await ReviewModel.deleteMany({ user: userId }, { session });
 
+      await AddressModel.deleteMany({ user: userId }, { session });
+
       await RefreshTokenModel.deleteMany({ user: userId }, { session });
+
+      await UserModel.findByIdAndDelete(userId, { session });
     });
   } finally {
     await session.endSession();

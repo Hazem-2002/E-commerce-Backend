@@ -552,6 +552,55 @@ const limitFieldsRule = (fieldName = "fields", typeName = "Limit Fields") =>
     })
     .bail({ level: "request" });
 
+const addressFieldRule = (fieldName, typeName, minLength = 2, maxLength = 50) =>
+  body(fieldName)
+    .exists()
+    .withMessage(`${typeName} is required`)
+    .bail()
+    .notEmpty()
+    .withMessage(`${typeName} cannot be empty`)
+    .bail()
+    .isString()
+    .withMessage(`${typeName} must be a string`)
+    .bail()
+    .trim()
+    .isLength({ min: minLength, max: maxLength })
+    .withMessage(
+      `${typeName} must be between ${minLength} and ${maxLength} characters long`,
+    )
+    .bail()
+    .matches(/^[A-Za-z\s]+$/)
+    .withMessage(`${typeName} must contain only letters and spaces`)
+    .bail({ level: "request" });
+
+const addressNumberFieldRule = (fieldName, typeName, min = 1, max = 9999) =>
+  body(fieldName)
+    .exists()
+    .withMessage(`${typeName} is required`)
+    .bail()
+    .notEmpty()
+    .withMessage(`${typeName} cannot be empty`)
+    .bail()
+    .isInt({ min, max })
+    .withMessage(`${typeName} must be a number`)
+    .bail({ level: "request" });
+
+const postalCodeRule = (fieldName = "postalCode", typeName = "Postal code") =>
+  body(fieldName)
+    .exists()
+    .withMessage(`${typeName} is required`)
+    .bail()
+    .notEmpty()
+    .withMessage(`${typeName} cannot be empty`)
+    .bail()
+    .isString()
+    .withMessage(`${typeName} must be a string`)
+    .bail()
+    .trim()
+    .isPostalCode("any")
+    .withMessage(`${typeName} must be a valid postal code`)
+    .bail({ level: "request" });
+
 module.exports = {
   nameRule,
   descriptionRule,
@@ -578,4 +627,7 @@ module.exports = {
   soldRule,
   commentRule,
   limitFieldsRule,
+  addressFieldRule,
+  addressNumberFieldRule,
+  postalCodeRule,
 };
