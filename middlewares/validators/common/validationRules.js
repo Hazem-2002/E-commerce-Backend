@@ -601,6 +601,53 @@ const postalCodeRule = (fieldName = "postalCode", typeName = "Postal code") =>
     .withMessage(`${typeName} must be a valid postal code`)
     .bail({ level: "request" });
 
+const discountRule = (fieldName = "discount", typeName = "Discount") =>
+  body(fieldName)
+    .exists()
+    .withMessage(`${typeName} is required`)
+    .bail()
+    .notEmpty()
+    .withMessage(`${typeName} cannot be empty`)
+    .bail()
+    .isFloat({ min: 1, max: 100 })
+    .withMessage(`${typeName} must be a number between 1 and 100`)
+    .bail({ level: "request" });
+
+const dateRule = (fieldName = "date", typeName = "Date") =>
+  body(fieldName)
+    .exists()
+    .withMessage(`${typeName} is required`)
+    .bail()
+    .notEmpty()
+    .withMessage(`${typeName} cannot be empty`)
+    .bail()
+    .isISO8601()
+    .withMessage(`${typeName} must be a valid ISO 8601 date`)
+    .bail({ level: "request" });
+
+const codeRule = (fieldName = "code", typeName = "Code") =>
+  body(fieldName)
+    .exists()
+    .withMessage(`${typeName} is required`)
+    .bail()
+    .notEmpty()
+    .withMessage(`${typeName} cannot be empty`)
+    .bail()
+    .isString()
+    .withMessage(`${typeName} must be a string`)
+    .bail()
+    .trim()
+    .isLength({ min: 3, max: 30 })
+    .withMessage(`${typeName} must be between 3 and 30 characters`)
+    .bail()
+    .matches(/^[A-Z0-9]+$/)
+    .withMessage(
+      `${typeName} must contain only uppercase letters and numbers without spaces or special characters`,
+    )
+    .bail()
+    .customSanitizer((value) => value.toUpperCase())
+    .bail({ level: "request" });
+
 module.exports = {
   nameRule,
   descriptionRule,
@@ -630,4 +677,7 @@ module.exports = {
   addressFieldRule,
   addressNumberFieldRule,
   postalCodeRule,
+  codeRule,
+  discountRule,
+  dateRule,
 };

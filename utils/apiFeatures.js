@@ -30,12 +30,19 @@ class ApiFeatures {
     return this;
   }
 
-  search() {
+  search(...fields) {
     if (this.searchQuery) {
-      this.filters.$or = [
-        { name: { $regex: this.searchQuery.trim(), $options: "i" } },
-        { description: { $regex: this.searchQuery.trim(), $options: "i" } },
-      ];
+      this.filters.$or =
+        fields.length > 0
+          ? fields.map((field) => ({
+              [field]: { $regex: this.searchQuery, $options: "i" },
+            }))
+          : [
+              { name: { $regex: this.searchQuery.trim(), $options: "i" } },
+              {
+                description: { $regex: this.searchQuery.trim(), $options: "i" },
+              },
+            ];
 
       this.query = this.query.find(this.filters);
     }
