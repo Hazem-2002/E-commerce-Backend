@@ -1,7 +1,12 @@
 const upload = require("./upload");
 const handleUploadError = require("./handleUploadError");
 
-const uploadFields = (fields, required = false, filetype = "image") => {
+const uploadFields = (
+  fields,
+  required = false,
+  optionalFields = [],
+  filetype = "image",
+) => {
   return (req, res, next) => {
     upload.fields(fields)(req, res, (err) => {
       let uploadError = null;
@@ -10,6 +15,7 @@ const uploadFields = (fields, required = false, filetype = "image") => {
         field.name.toLowerCase().includes(err?.field?.toLowerCase()),
       );
 
+  
       if (
         field &&
         (!req.files[field.name] ||
@@ -31,13 +37,18 @@ const uploadFields = (fields, required = false, filetype = "image") => {
       if (uploadError) {
         req.uploadError = uploadError;
       }
-      if (required && !req.uploadError && req.files) {
+
+      if (
+        required &&
+        !req.uploadError &&
+        req.files
+      ) {
         const missingField = fields.find(
           (field) =>
             !req.files[field.name] || req.files[field.name].length === 0,
         );
 
-        if (missingField) {
+        if (missingField && !optionalFields.includes(missingField.name)) {
           req.uploadError = {
             message: `The '${missingField.name}' field is required.`,
           };

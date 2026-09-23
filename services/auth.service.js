@@ -7,6 +7,7 @@ const UsersModel = require("../models/users.model");
 const RefreshTokenModel = require("../models/refreshToken.model");
 const ResetTokenModel = require("../models/resetToken.model");
 const OtpModel = require("../models/otp.model");
+const CartModel = require("../models/cart.model");
 const ApiError = require("../utils/apiError");
 const sendEmail = require("./sendEmail.service");
 const emailVerificationTemplate = require("../templates/emails/verificationEmailTemplate");
@@ -100,6 +101,15 @@ const registerService = async ({ name, phone, email, password, file }) => {
 
       await otpDoc.save({ session });
       user = await user.save({ session });
+
+      const cart = new CartModel({
+        user: user._id,
+        totalPrice: 0,
+        totalDiscount: 0,
+        totalPriceAfterDiscount: 0,
+      });
+
+      await cart.save({ session });
     });
   } catch (error) {
     if (

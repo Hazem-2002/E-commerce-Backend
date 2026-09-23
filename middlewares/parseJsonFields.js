@@ -1,3 +1,5 @@
+const ApiError = require("../utils/apiError");
+
 const parseJsonFields = (...fields) => {
   return (req, res, next) => {
     try {

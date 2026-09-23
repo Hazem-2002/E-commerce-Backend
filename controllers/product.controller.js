@@ -11,7 +11,9 @@ const {
 } = require("../services/product.service");
 
 const createProduct = asyncWrapper(async (req, res, next) => {
-  const product = await createProductService(req.body, req.files);
+  const productData = req.body;
+
+  const product = await createProductService(productData, req.files);
 
   res.status(201).json({
     status: httpStatusText.SUCCESS,
@@ -49,9 +51,8 @@ const getProductById = asyncWrapper(async (req, res, next) => {
 
 const updateProduct = asyncWrapper(async (req, res, next) => {
   const { id } = req.params;
-  const updatedData = req.body;
 
-  if ((!updatedData || Object.keys(updatedData).length === 0) && !req.files) {
+  if ((!req.body || Object.keys(req.body).length === 0) && !req.files) {
     return next(
       new ApiError(
         400,
@@ -60,7 +61,7 @@ const updateProduct = asyncWrapper(async (req, res, next) => {
     );
   }
 
-  const updatedProduct = await updateProductService(id, updatedData, req.files);
+  const updatedProduct = await updateProductService(id, req.body, req.files);
 
   res.status(200).json({
     status: httpStatusText.SUCCESS,

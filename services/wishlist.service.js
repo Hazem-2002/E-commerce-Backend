@@ -14,14 +14,14 @@ const getWishlistsService = async (query) => {
     .sort()
     .limitFields()
     .populate([
-      { path: "user", select: "name email role" },
+      { path: "user", select: "name email role image" },
       {
         path: "products",
         select: "product -wishlist -_id",
         populate: {
           path: "product",
           select:
-            "name price priceAfterDiscount productCover createdAt updatedAt",
+            "name price priceAfterDiscount sold productCover ratingsAverage ratingsQuantity isFeatured isActive tags",
         },
       },
     ]);
@@ -100,8 +100,12 @@ const getUserWishlistService = async (query, userId) => {
     .populate([
       {
         path: "product",
-        select:
-          "name price priceAfterDiscount productCover ratingsAverage ratingsQuantity isFeatured slug",
+        select: "name price priceAfterDiscount sold productCover ratingsAverage ratingsQuantity isFeatured isActive tags",
+        populate: [
+          { path: "category", select: "name" },
+          { path: "subcategories", select: "name" },
+          { path: "brand", select: "name" },
+        ],
       },
     ]);
 

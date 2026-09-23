@@ -3,6 +3,7 @@ const { body, check } = require("express-validator");
 const mongoose = require("mongoose");
 const bcrypt = require("bcrypt");
 const ApiError = require("../../../utils/apiError");
+const normalizeVariantColors = require("../../../utils/normalizeVariantColors");
 
 const UsersModel = require("../../../models/users.model");
 const CategoryModel = require("../../../models/category.model");
@@ -324,6 +325,49 @@ const quantityRule = (fieldName = "quantity", typeName = "Quantity") =>
     .withMessage(`${typeName} must be a positive integer`)
     .bail({ level: "request" });
 
+const tagsRule = (fieldName = "tags", typeName = "Tags") =>
+  body(fieldName)
+    .exists()
+    .withMessage(`${typeName} are required`)
+    .notEmpty()
+    .withMessage(`${typeName} cannot be empty`)
+    .bail()
+    .isArray({ min: 1 })
+    .withMessage(`${typeName} must be an array with at least one tag`)
+    .bail()
+    .custom((tags) => {
+      for (const tag of tags) {
+        if (typeof tag !== "string" || !tag.trim()) {
+          return Promise.reject(
+            new ApiError(
+              400,
+              `Invalid tag '${tag}'. Please provide non-empty string tags.`,
+            ),
+          );
+        }
+      }
+      return true;
+    })
+    .bail({ level: "request" });
+
+const skuRule = (fieldName = "sku", typeName = "SKU") =>
+  body(fieldName)
+    .exists()
+    .withMessage(`${typeName} is required`)
+    .bail()
+    .notEmpty()
+    .withMessage(`${typeName} cannot be empty`)
+    .bail()
+    .trim()
+    .isLength({ min: 3, max: 50 })
+    .withMessage(`${typeName} must be between 3 and 50 characters long`)
+    .bail()
+    .matches(/^[A-Z0-9_-]{3,50}$/)
+    .withMessage(
+      `${typeName} must be alphanumeric, uppercase, and can include underscores and hyphens. Length should be between 3 and 50 characters.`,
+    )
+    .bail({ level: "request" });
+
 const priceRule = (fieldName = "price", typeName = "Price") =>
   body(fieldName)
     .exists()
@@ -363,7 +407,7 @@ const priceAfterDiscountRule = (
     })
     .bail({ level: "request" });
 
-const colorsRule = (fieldName = "colors", typeName = "Colors") =>
+const variantsRule = (fieldName = "variants", typeName = "Variants") =>
   body(fieldName)
     .exists()
     .withMessage(`${typeName} are required`)
@@ -372,70 +416,181 @@ const colorsRule = (fieldName = "colors", typeName = "Colors") =>
     .withMessage(`${typeName} cannot be empty`)
     .bail()
     .isArray({ min: 1 })
-    .withMessage(`${typeName} must be an array with at least one color`)
+    .withMessage(`${typeName} must be an array with at least one variant`)
     .bail()
-    .custom((colors, { req }) => {
-      for (const color of colors) {
-        if (!color.hex || !color.quantity) {
+    .custom((variants) => {
+      // Check if each variant has a valid quantity and color hex value and size if provided
+      for (const variant of variants) {
+        if (!variant.quantity) {
           return Promise.reject(
             new ApiError(
               400,
-              `${typeName} must contain both 'hex' and 'quantity' fields for each color.`,
+              `Each variant of product must have a valid quantity. Please provide a quantity for each variant.`,
             ),
           );
         }
+
+        if (!Number.isInteger(variant.quantity) || variant.quantity < 1) {
+          return Promise.reject(
+            new ApiError(
+              400,
+              `Each variant of product must have a valid quantity. Please provide a positive integer for the quantity.`,
+            ),
+          );
+        }
+
         if (
-          color.color &&
-          (typeof color.color !== "string" || color.color.trim() === "")
+          variant.color &&
+          (!variant.color.hex ||
+            !/^#([0-9A-F]{3}){1,2}$/i.test(variant.color.hex))
         ) {
           return Promise.reject(
             new ApiError(
               400,
-              `'color' field in each color of ${typeName} must be a non-empty string if provided.`,
+              `Color must have a valid hex value if provided. Please provide a valid hex value for the color.`,
             ),
           );
         }
-        if (!/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/.test(color.hex)) {
+
+        if (
+          variant.size &&
+          (typeof variant.size !== "string" || variant.size.trim() === "")
+        ) {
           return Promise.reject(
             new ApiError(
               400,
-              `'hex' field in each color of ${typeName} must be a valid hex color code.`,
-            ),
-          );
-        }
-        if (!Number.isInteger(color.quantity) || color.quantity < 0) {
-          return Promise.reject(
-            new ApiError(
-              400,
-              `'quantity' field in each color of ${typeName} must be a non-negative integer.`,
+              `Each variant of product must have a valid size if provided. Please provide a non-empty string for the size.`,
             ),
           );
         }
       }
-
+      return true;
+    })
+    .bail()
+    .custom((variants, { req }) => {
+      // check total quantity of all variants equals the product quantity
       if (!req.body.quantity) {
         return Promise.reject(
           new ApiError(
             400,
-            `${typeName} validation requires the product quantity to be specified. Please provide the product quantity.`,
+            `Product quantity is required to validate the total quantity of variants. Please provide a valid product quantity.`,
           ),
         );
       }
 
-      const totalQuantity = colors.reduce(
-        (sum, color) => sum + color.quantity,
+      const totalVariantQuantity = variants.reduce(
+        (total, variant) => total + variant.quantity,
         0,
       );
-
-      if (totalQuantity !== +req.body.quantity) {
+      if (totalVariantQuantity !== +req.body.quantity) {
         return Promise.reject(
           new ApiError(
             400,
-            `The total quantity of all colors (${totalQuantity}) does not match the product quantity (${req.body.quantity}). Please ensure that the sum of color quantities equals the product quantity.`,
+            `Total quantity of variants (${totalVariantQuantity}) must match the product quantity (${req.body.quantity}).`,
           ),
         );
       }
+      return true;
+    })
+    .bail()
+    .customSanitizer((_, { req }) => {
+      return normalizeVariantColors(req.body);
+    })
+    .custom((variants) => {
+      // Check for duplicate color and size combinations
+      const combinations = new Set();
 
+      for (const variant of variants) {
+        const color = variant.color?.color?.trim().toLowerCase();
+        const size = variant.size?.trim().toLowerCase();
+
+        const combination = `${color}-${size}`;
+
+        if (combinations.has(combination)) {
+          return Promise.reject(
+            new ApiError(
+              400,
+              `Duplicate variant combination: ${combination}. Each variant must have a unique color and size combination.`,
+            ),
+          );
+        }
+
+        combinations.add(combination);
+      }
+      return true;
+    })
+    .bail({ level: "request" });
+
+const deletedImagesRule = (
+  fieldName = "deletedImages",
+  typeName = "Delete Variants",
+) =>
+  body(fieldName)
+    .optional()
+    .isArray({ min: 1 })
+    .withMessage(
+      `${typeName} must be an array with at least one variant to delete`,
+    )
+    .bail()
+    .custom((deletedImages) => {
+      for (const publicId of deletedImages) {
+        if (typeof publicId !== "string" || !publicId.trim()) {
+          return Promise.reject(
+            new ApiError(
+              400,
+              `Invalid Cloudinary public_id '${publicId}'. Please provide valid Cloudinary public IDs to delete.`,
+            ),
+          );
+        }
+      }
+      return true;
+    })
+    .bail({ level: "request" });
+
+const cartItemVariantsRule = (fieldName = "variants", typeName = "Variants") =>
+  body(fieldName)
+    .exists()
+    .withMessage(`${typeName} are required`)
+    .bail()
+    .notEmpty()
+    .withMessage(`${typeName} cannot be empty`)
+    .bail()
+    .isArray({ min: 1 })
+    .withMessage(`${typeName} must be an array with at least one variant`)
+    .bail()
+    .custom((variants) => {
+      // Check if each variant has a valid quantity and color hex value and size if provided
+      for (const variant of variants) {
+        if (
+          (variant.quantity && !Number.isInteger(variant.quantity)) ||
+          variant.quantity < 0
+        ) {
+          return Promise.reject(
+            new ApiError(
+              400,
+              `Each variant of product must have a valid quantity. Please provide a positive integer for the quantity.`,
+            ),
+          );
+        }
+
+        if (!variant.variantId) {
+          return Promise.reject(
+            new ApiError(
+              400,
+              `variantId is required for each variant. Please provide a valid variantId for each variant.`,
+            ),
+          );
+        }
+
+        if (!mongoose.Types.ObjectId.isValid(variant.variantId)) {
+          return Promise.reject(
+            new ApiError(
+              400,
+              `This variant Id '${variant.variantId}' is not a valid MongoDB ObjectId. Please provide a valid variantId for each variant.`,
+            ),
+          );
+        }
+      }
       return true;
     })
     .bail({ level: "request" });
@@ -483,6 +638,18 @@ const ratingsQuantityRule = (
     .bail({ level: "request" });
 
 const isFeaturedRule = (fieldName = "isFeatured", typeName = "Is Featured") =>
+  body(fieldName)
+    .exists()
+    .withMessage(`${typeName} is required`)
+    .bail()
+    .notEmpty()
+    .withMessage(`${typeName} cannot be empty`)
+    .bail()
+    .isBoolean()
+    .withMessage(`${typeName} must be a boolean value`)
+    .bail({ level: "request" });
+
+const isActiveRule = (fieldName = "isActive", typeName = "Active Status") =>
   body(fieldName)
     .exists()
     .withMessage(`${typeName} is required`)
@@ -623,6 +790,20 @@ const dateRule = (fieldName = "date", typeName = "Date") =>
     .bail()
     .isISO8601()
     .withMessage(`${typeName} must be a valid ISO 8601 date`)
+    .bail()
+    .custom((value) => {
+      const date = new Date(value);
+      const now = new Date();
+      if (date < now) {
+        return Promise.reject(
+          new ApiError(
+            400,
+            `${typeName} must be a future date. Please provide a valid date that is not in the past.`,
+          ),
+        );
+      }
+      return true;
+    })
     .bail({ level: "request" });
 
 const codeRule = (fieldName = "code", typeName = "Code") =>
@@ -660,17 +841,22 @@ module.exports = {
   otpRule,
   mongoIdRule,
   mongoIdArrayRule,
+  variantsRule,
+  deletedImagesRule,
+  cartItemVariantsRule,
   categoryIdRule,
   subcategoryIdRule,
   brandIdRule,
   quantityRule,
+  tagsRule,
+  skuRule,
   priceRule,
   priceAfterDiscountRule,
-  colorsRule,
   ratingRule,
   ratingsAverageRule,
   ratingsQuantityRule,
   isFeaturedRule,
+  isActiveRule,
   soldRule,
   commentRule,
   limitFieldsRule,

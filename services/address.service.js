@@ -19,7 +19,8 @@ const getAddressesService = async (query, userId) => {
     .filter()
     .paginate(await AddressModel.countDocuments(apiFeatures.filters))
     .sort()
-    .limitFields();
+    .limitFields()
+    .populate([{ path: "user", select: "name email role" }]);
 
   const { totalResults, totalPages } = apiFeatures.paginatedResults;
 

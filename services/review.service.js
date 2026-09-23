@@ -43,7 +43,11 @@ const createReviewService = async (reviewData) => {
 
   await review.populate([
     { path: "user", select: "name email" },
-    { path: "productId", select: "name" },
+    {
+      path: "productId",
+      select:
+        "name sold productCover ratingsAverage ratingsQuantity isFeatured",
+    },
   ]);
   return review;
 };
@@ -79,12 +83,22 @@ const getReviewsService = async ({ query, productId, userId }) => {
     .limitFields(productId ? "-productId" : userId ? "-user" : "")
     .populate(
       productId
-        ? [{ path: "user", select: "name email" }]
+        ? [{ path: "user", select: "name email image" }]
         : userId
-          ? [{ path: "productId", select: "name" }]
+          ? [
+              {
+                path: "productId",
+                select:
+                  "name sold productCover ratingsAverage ratingsQuantity isFeatured",
+              },
+            ]
           : [
-              { path: "user", select: "name email" },
-              { path: "productId", select: "name" },
+              { path: "user", select: "name email image" },
+              {
+                path: "productId",
+                select:
+                  "name sold productCover ratingsAverage ratingsQuantity isFeatured",
+              },
             ],
     );
 
@@ -128,8 +142,12 @@ const getReviewByIdService = async (reviewId, productId) => {
   }
 
   await review.populate([
-    { path: "user", select: "name email" },
-    { path: "productId", select: "name" },
+    { path: "user", select: "name email image" },
+    {
+      path: "productId",
+      select:
+        "name sold productCover ratingsAverage ratingsQuantity isFeatured",
+    },
   ]);
 
   return review;
@@ -170,8 +188,12 @@ const updateReviewService = async ({ reviewId, updateData, userId }) => {
   }
 
   await review.populate([
-    { path: "user", select: "name email" },
-    { path: "productId", select: "name" },
+    { path: "user", select: "name email image" },
+    {
+      path: "productId",
+      select:
+        "name sold productCover ratingsAverage ratingsQuantity isFeatured",
+    },
   ]);
 
   return review;
@@ -207,8 +229,12 @@ const deleteReviewService = async ({ reviewId, user }) => {
   }
 
   await review.populate([
-    { path: "user", select: "name email" },
-    { path: "productId", select: "name" },
+    { path: "user", select: "name email image" },
+    {
+      path: "productId",
+      select:
+        "name sold productCover ratingsAverage ratingsQuantity isFeatured",
+    },
   ]);
 
   return review;

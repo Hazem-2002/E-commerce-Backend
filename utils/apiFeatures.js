@@ -31,18 +31,28 @@ class ApiFeatures {
   }
 
   search(...fields) {
+    const fieldNames = [];
+    const conditions = [];
+
+    for (const field of fields) {
+      if (typeof field === "string") {
+        fieldNames.push(field.trim());
+      } else if (typeof field === "object" && field !== null) {
+        conditions.push(field);
+      }
+    }
+
     if (this.searchQuery) {
-      this.filters.$or =
-        fields.length > 0
-          ? fields.map((field) => ({
-              [field]: { $regex: this.searchQuery, $options: "i" },
-            }))
-          : [
-              { name: { $regex: this.searchQuery.trim(), $options: "i" } },
-              {
-                description: { $regex: this.searchQuery.trim(), $options: "i" },
-              },
-            ];
+      this.filters.$or = [
+        ...fieldNames.map((field) => ({
+          [field]: { $regex: this.searchQuery, $options: "i" },
+        })),
+        ...conditions,
+        { name: { $regex: this.searchQuery.trim(), $options: "i" } },
+        {
+          description: { $regex: this.searchQuery.trim(), $options: "i" },
+        },
+      ];
 
       this.query = this.query.find(this.filters);
     }

@@ -16,6 +16,19 @@ const productSchema = new mongoose.Schema(
       unique: [true, "Product slug must be unique"],
       trim: true,
     },
+    shortDescription: {
+      type: String,
+      required: [true, "Product short description is required"],
+      minlength: [
+        10,
+        "Product short description must be at least 10 characters long",
+      ],
+      maxlength: [
+        200,
+        "Product short description must be at most 200 characters long",
+      ],
+      trim: true,
+    },
     description: {
       type: String,
       required: [true, "Product description is required"],
@@ -47,36 +60,97 @@ const productSchema = new mongoose.Schema(
       type: Number,
       validate: {
         validator: function (value) {
-          return value < this.price;
+          return value <= this.price;
         },
         message:
           "Price after discount ({VALUE}) should be less than the original price",
       },
+      default: function () {
+        return this.price;
+      },
     },
-    colors: {
+    variants: {
       type: [
         {
           color: {
+            color: {
+              type: String,
+              trim: true,
+            },
+            hex: {
+              type: String,
+              trim: true,
+              match: [
+                /^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/,
+                "Product variant color hex is not valid",
+              ],
+              required: [true, "Product variant color hex is required"],
+            },
+          },
+
+          size: {
             type: String,
             trim: true,
           },
-          hex: {
-            type: String,
-            required: [true, "Product color hex is required"],
-            trim: true,
-            match: [
-              /^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/,
-              "Product color hex is not valid",
-            ],
-          },
+
           quantity: {
             type: Number,
-            required: [true, "Product color quantity is required"],
+            required: [true, "Product variant quantity is required"],
             min: 0,
+          },
+
+          price: {
+            type: Number,
+            min: 0,
+          },
+
+          priceAfterDiscount: {
+            type: Number,
+            min: 0,
+            validate: {
+              validator: function (value) {
+                return value <= this.price;
+              },
+              message:
+                "Price after discount ({VALUE}) should be less than or equal to the original price",
+            },
+            default: function () {
+              return this.price;
+            },
+          },
+
+          image: {
+            type: {
+              image_url: {
+                type: String,
+                required: [true, "Product variant image URL is required"],
+              },
+              public_id: {
+                type: String,
+                required: [true, "Product variant image public ID is required"],
+              },
+            },
           },
         },
       ],
+
       default: [],
+    },
+    tags: {
+      type: [String],
+      default: [],
+    },
+    sku: {
+      type: String,
+      trim: true,
+      unique: [true, "Product SKU must be unique"],
+      validate: {
+        validator: function (value) {
+          return /^[A-Z0-9_-]{3,50}$/.test(value);
+        },
+        message:
+          "Product SKU must be alphanumeric, uppercase, and can include underscores and hyphens. Length should be between 3 and 50 characters.",
+      },
     },
     productCover: {
       type: {
@@ -127,6 +201,10 @@ const productSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    isActive: {
+      type: Boolean,
+      default: true,
+    },
   },
   {
     timestamps: true,
@@ -140,15 +218,21 @@ const productSchema = new mongoose.Schema(
         delete ret.productCover?.id;
         delete ret.productCover?._id;
 
-        ret.colors?.forEach((color) => {
-          delete color.id;
-          delete color._id;
+        ret.variants?.forEach((variant) => {
+          delete variant.id;
+          delete variant.image?.id;
+          delete variant.image?._id;
         });
 
         ret.productImages?.forEach((image) => {
           delete image.id;
           delete image._id;
         });
+
+        if (ret.quantity) {
+          ret.stock = ret.quantity;
+          delete ret.quantity;
+        }
 
         return ret;
       },

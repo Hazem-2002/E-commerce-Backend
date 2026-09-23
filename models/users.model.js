@@ -77,7 +77,6 @@ const usersSchema = new mongoose.Schema(
   {
     timestamps: true,
     toJSON: {
-      virtuals: true,
       transform: (doc, ret) => {
         delete ret.password;
         delete ret.__v;
@@ -89,17 +88,8 @@ const usersSchema = new mongoose.Schema(
         return ret;
       },
     },
-    toObject: { virtuals: true },
   },
 );
-
-// Virtual populate for reviews
-usersSchema.virtual("review", {
-  ref: "Review",
-  localField: "_id",
-  foreignField: "user",
-  justOne: true,
-});
 
 // Pre-save middleware to hash password if modified
 usersSchema.pre("save", async function () {

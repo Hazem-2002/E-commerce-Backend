@@ -37,7 +37,7 @@ wishlistSchema.methods.getWishlistProducts = async function () {
     populate: {
       path: "product",
       select:
-        "name price priceAfterDiscount productCover ratingsAverage ratingsQuantity isFeatured slug",
+        "name price priceAfterDiscount sold productCover ratingsAverage ratingsQuantity isFeatured",
     },
   });
 

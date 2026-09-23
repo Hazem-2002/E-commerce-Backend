@@ -1,5 +1,4 @@
 const asyncWrapper = require("../utils/asyncWrapper");
-const ApiError = require("../utils/apiError");
 const httpStatusText = require("../utils/httpStatusText");
 
 const {
