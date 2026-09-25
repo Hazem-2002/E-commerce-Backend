@@ -12,6 +12,8 @@ const {
   getMe,
   getMyReviews,
   getMyWishlist,
+  getMyOrders,
+  getUserOrders,
   getUserWishlist,
   updateUser,
   updateMe,
@@ -23,10 +25,12 @@ const {
   getUserByIdValidator,
   getUserReviewsValidator,
   getUserWishlistValidator,
+  getUserOrdersValidator,
   updateUserValidator,
   updateMeValidator,
   deleteUserValidator,
 } = require("../middlewares/validators/users.validator");
+
 const validate = require("../middlewares/validators/validate");
 
 const router = express.Router();
@@ -50,6 +54,8 @@ router
 router.route("/me/reviews").get(authenticate, getMyReviews);
 
 router.route("/me/wishlist").get(authenticate, getMyWishlist);
+
+router.route("/me/orders").get(authenticate, getMyOrders);
 
 router
   .route("/:userId")
@@ -88,6 +94,16 @@ router
     getUserWishlistValidator,
     validate,
     getUserWishlist,
+  );
+
+router
+  .route("/:userId/orders")
+  .get(
+    authenticate,
+    authorize("super-admin", "admin"),
+    getUserOrdersValidator,
+    validate,
+    getUserOrders,
   );
 
 module.exports = router;

@@ -829,6 +829,37 @@ const codeRule = (fieldName = "code", typeName = "Code") =>
     .customSanitizer((value) => value.toUpperCase())
     .bail({ level: "request" });
 
+const orderStatusRule = (fieldName = "status", typeName = "Order Status") =>
+  body(fieldName)
+    .exists()
+    .withMessage(`${typeName} is required`)
+    .bail()
+    .notEmpty()
+    .withMessage(`${typeName} cannot be empty`)
+    .bail()
+    .isIn(["pending", "processing", "shipped", "delivered", "canceled"])
+    .withMessage(
+      `${typeName} must be one of the following: pending, processing, shipped, delivered, or canceled`,
+    )
+    .bail({ level: "request" });
+
+const paymentStatusRule = (
+  fieldName = "paymentStatus",
+  typeName = "Payment Status",
+) =>
+  body(fieldName)
+    .exists()
+    .withMessage(`${typeName} is required`)
+    .bail()
+    .notEmpty()
+    .withMessage(`${typeName} cannot be empty`)
+    .bail()
+    .isIn(["pending", "paid", "failed", "refunded"])
+    .withMessage(
+      `${typeName} must be one of the following: pending, paid, failed, or refunded`,
+    )
+    .bail({ level: "request" });
+
 module.exports = {
   nameRule,
   descriptionRule,
@@ -866,4 +897,6 @@ module.exports = {
   codeRule,
   discountRule,
   dateRule,
+  orderStatusRule,
+  paymentStatusRule,
 };

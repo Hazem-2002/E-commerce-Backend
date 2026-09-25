@@ -25,12 +25,6 @@ app.use(cookieParser());
 // Mount all routers
 mountRoutes(app);
 
-app.all("/*splat", (req, res, next) => {
-  return next(
-    new apiError(404, `Can't find ${req.originalUrl} on this server!`),
-  );
-});
-
 // Global error handling middleware
 app.use(globalErrorHandler);
 

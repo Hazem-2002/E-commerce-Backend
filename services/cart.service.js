@@ -291,9 +291,12 @@ const removeFromCartService = async (userId, productId, variantId) => {
   return cartItem.quantity > 0 ? cartItem : null;
 };
 
-const clearCartService = async (userId) => {
+const clearCartService = async (userId, session = null) => {
   let cart;
-  const session = await CartModel.startSession();
+  
+  if (!session) {
+    session = await CartModel.startSession();
+  }
 
   try {
     cart = await CartModel.findOne({ user: userId }).session(session);

@@ -1,3 +1,5 @@
+const ApiError = require("../utils/apiError");
+
 const authRouter = require("./auth.router");
 const usersRouter = require("./users.router");
 const categoryRouter = require("./category.router");
@@ -9,6 +11,7 @@ const wishlistRouter = require("./wishlist.router");
 const addressRouter = require("./address.router");
 const couponRouter = require("./coupon.router");
 const cartRouter = require("./cart.router");
+const orderRouter = require("./order.router");
 
 const mountRouters = (app) => {
   app.use("/api/v1/auth", authRouter);
@@ -22,6 +25,13 @@ const mountRouters = (app) => {
   app.use("/api/v1/addresses", addressRouter);
   app.use("/api/v1/coupons", couponRouter);
   app.use("/api/v1/carts", cartRouter);
+  app.use("/api/v1/orders", orderRouter);
+
+  app.all("/*splat", (req, res, next) => {
+    return next(
+      new ApiError(404, `Can't find ${req.originalUrl} on this server!`),
+    );
+  });
 };
 
 module.exports = mountRouters;

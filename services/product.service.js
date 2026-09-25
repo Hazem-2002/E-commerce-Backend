@@ -25,6 +25,10 @@ const createProductService = async (productData, files) => {
     }
   });
 
+  if (!productData.priceAfterDiscount) {
+    productData.priceAfterDiscount = productData.price;
+  }
+
   const product = new ProductModel(productData);
 
   await uploadProductImages(product, files);
