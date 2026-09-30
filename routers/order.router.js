@@ -11,7 +11,7 @@ const {
 const validate = require("../middlewares/validators/validate");
 
 const {
-  createOrder,
+  createCashOnDeliveryOrder,
   getOrders,
   getOrderById,
   updateOrderStatus,
@@ -23,7 +23,7 @@ router.use(authenticate);
 
 router
   .route("/")
-  .post(createOrder)
+  .post(createCashOnDeliveryOrder)
   .get(authorize("super-admin", "admin"), getOrders);
 
 router

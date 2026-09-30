@@ -2,15 +2,21 @@ const asyncWrapper = require("../utils/asyncWrapper");
 const httpStatusText = require("../utils/httpStatusText");
 
 const {
-  createOrderService,
+  createCashOnDeliveryOrderService,
   getOrdersService,
   getOrderByIdService,
-  updateOrderStatusService,
+  updateOrderService,
 } = require("../services/order.service");
 
-const createOrder = asyncWrapper(async (req, res) => {
+const createCashOnDeliveryOrder = asyncWrapper(async (req, res) => {
   const { user } = req;
-  const order = await createOrderService({ userId: user._id });
+
+  const order = await createCashOnDeliveryOrderService({
+    userId: user._id,
+    addressId: req.body?.addressId,
+    shippingAddress: req.body?.shippingAddress,
+  });
+
   res.status(201).json({
     status: httpStatusText.SUCCESS,
     message: "Order created successfully",
@@ -40,7 +46,7 @@ const updateOrderStatus = asyncWrapper(async (req, res) => {
   const { orderId } = req.params;
   const { orderStatus } = req.body;
 
-  await updateOrderStatusService(orderId, orderStatus);
+  await updateOrderService(orderId, { orderStatus });
 
   res.status(200).json({
     status: httpStatusText.SUCCESS,
@@ -49,7 +55,7 @@ const updateOrderStatus = asyncWrapper(async (req, res) => {
 });
 
 module.exports = {
-  createOrder,
+  createCashOnDeliveryOrder,
   getOrders,
   getOrderById,
   updateOrderStatus,

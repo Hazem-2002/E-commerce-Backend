@@ -10,8 +10,21 @@ const AddressModel = require("../models/address.model");
 
 const { clearCartService } = require("./cart.service");
 
-const createOrderService = async ({ userId, addressId, shippingAddress }) => {
-  const cart = await CartModel.findOne({ user: userId });
+const prepareOrderService = async ({
+  userId,
+  addressId,
+  shippingAddress,
+  paymentMethod = "cash_on_delivery",
+  paymentStatus = "pending",
+  session = null,
+}) => {
+  const cartQuery = CartModel.findOne({ user: userId });
+
+  if (session) {
+    cartQuery.session(session);
+  }
+
+  const cart = await cartQuery;
 
   if (!cart) {
     throw new ApiError(
@@ -20,7 +33,13 @@ const createOrderService = async ({ userId, addressId, shippingAddress }) => {
     );
   }
 
-  const cartItems = await CartItemModel.find({ cart: cart._id });
+  const cartItemsQuery = CartItemModel.find({ cart: cart._id });
+
+  if (session) {
+    cartItemsQuery.session(session);
+  }
+
+  const cartItems = await cartItemsQuery;
 
   if (cartItems.length === 0) {
     throw new ApiError(
@@ -58,10 +77,10 @@ const createOrderService = async ({ userId, addressId, shippingAddress }) => {
     products.map((product) => [product._id.toString(), product]),
   );
 
-  const taxRate = 0.14;
-  const shippingPrice = 70;
+  const taxRate = parseFloat(process.env.TAX_RATE) || 0.14;
+  const shippingPrice = parseFloat(process.env.SHIPPING_COST) || 70;
 
-  const order = new OrderModel({
+  const orderData = {
     user: {
       _id: user._id,
       name: user.name,
@@ -101,68 +120,98 @@ const createOrderService = async ({ userId, addressId, shippingAddress }) => {
       shippingPrice
     ).toFixed(2),
     quantity: cart.quantity,
-    paymentMethod: "cash_on_delivery",
-  });
+    paymentMethod: paymentMethod,
+    paymentStatus: paymentStatus,
+  };
 
-  const session = await OrderModel.startSession();
+  return { orderData, cartItems, cart };
+};
 
-  try {
-    await session.withTransaction(async () => {
-      await order.save({ session });
+const createOrderService = async (orderData, session = null) => {
+  const order = new OrderModel(orderData);
 
-      const operations = [];
+  await order.save(session ? { session } : undefined);
 
-      for (const item of cartItems) {
-        operations.push({
-          updateOne: {
-            filter: {
-              _id: item.product,
-              quantity: { $gte: item.quantity },
-            },
-            update: {
-              $inc: {
-                sold: item.quantity,
-                quantity: -item.quantity,
+  return order;
+};
+
+const decreaseOrderStockService = async (cartItems, session = null) => {
+  const operations = [];
+
+  for (const item of cartItems) {
+    operations.push({
+      updateOne: {
+        filter: {
+          _id: item.product,
+          quantity: { $gte: item.quantity },
+        },
+        update: {
+          $inc: {
+            sold: item.quantity,
+            quantity: -item.quantity,
+          },
+        },
+      },
+    });
+
+    for (const variant of item.variants) {
+      operations.push({
+        updateOne: {
+          filter: {
+            _id: item.product,
+            variants: {
+              $elemMatch: {
+                _id: variant.variantId,
+                quantity: { $gte: variant.quantity },
               },
             },
           },
-        });
-
-        for (const variant of item.variants) {
-          operations.push({
-            updateOne: {
-              filter: {
-                _id: item.product,
-                variants: {
-                  $elemMatch: {
-                    _id: variant.variantId,
-                    quantity: { $gte: variant.quantity },
-                  },
-                },
-              },
-              update: {
-                $inc: {
-                  "variants.$.quantity": -variant.quantity,
-                },
-              },
+          update: {
+            $inc: {
+              "variants.$.quantity": -variant.quantity,
             },
-          });
-        }
-      }
+          },
+        },
+      });
+    }
+  }
 
-      const result = await ProductModel.bulkWrite(operations, {
+  const result = await ProductModel.bulkWrite(
+    operations,
+    session ? { session } : undefined,
+  );
+
+  if (result.modifiedCount !== operations.length) {
+    throw new ApiError(
+      409,
+      "Some products or variants in your order are out of stock or do not have sufficient quantity. Please review your cart and try again.",
+    );
+  }
+};
+
+const createCashOnDeliveryOrderService = async ({
+  userId,
+  addressId,
+  shippingAddress,
+}) => {
+  const session = await ProductModel.startSession();
+  let order;
+
+  try {
+    await session.withTransaction(async () => {
+      const { orderData, cartItems } = await prepareOrderService({
+        userId,
+        addressId,
+        shippingAddress,
         session,
       });
 
-      if (result.modifiedCount !== operations.length) {
-        throw new ApiError(
-          409,
-          "Some products or variants in your order are out of stock or do not have sufficient quantity. Please review your cart and try again.",
-        );
-      }
-    });
+      order = await createOrderService(orderData, session);
 
-    await clearCartService(userId, session);
+      await decreaseOrderStockService(cartItems, session);
+
+      await clearCartService(userId, session);
+    });
   } finally {
     await session.endSession();
   }
@@ -255,22 +304,25 @@ const getOrderByIdService = async (orderId) => {
   return order;
 };
 
-const updateOrderStatusService = async (orderId, newStatus) => {
+const updateOrderService = async (orderId, updateData, session = null) => {
   const order = await OrderModel.findById(orderId);
 
   if (!order) {
-    throw new ApiError(404, "Order not found. Please check the order ID.");
+    throw new ApiError(404, `Order with ID ${orderId} not found.`);
   }
 
-  order.orderStatus = newStatus;
+  Object.assign(order, updateData);
 
-  await order.save();
+  await order.save(session ? { session } : undefined);
 };
 
 module.exports = {
+  prepareOrderService,
   createOrderService,
+  decreaseOrderStockService,
+  createCashOnDeliveryOrderService,
   getUserOrdersService,
   getOrdersService,
   getOrderByIdService,
-  updateOrderStatusService,
+  updateOrderService,
 };

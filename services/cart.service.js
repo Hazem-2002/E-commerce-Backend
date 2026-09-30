@@ -292,30 +292,32 @@ const removeFromCartService = async (userId, productId, variantId) => {
 };
 
 const clearCartService = async (userId, session = null) => {
-  let cart;
-  
-  if (!session) {
-    session = await CartModel.startSession();
+  const cartQuery = CartModel.findOne({ user: userId });
+
+  if (session) {
+    cartQuery.session(session);
   }
 
-  try {
-    cart = await CartModel.findOne({ user: userId }).session(session);
+  const cart = await cartQuery;
 
-    if (!cart) {
-      throw new ApiError(404, "Cart not found for the user.");
-    }
-
-    await CartItemModel.deleteMany({ cart: cart._id }).session(session);
-
-    cart.quantity = 0;
-    cart.totalPrice = 0;
-    cart.totalPriceAfterDiscount = 0;
-    cart.totalDiscount = 0;
-
-    await cart.save({ session });
-  } finally {
-    await session.endSession();
+  if (!cart) {
+    throw new ApiError(404, "Cart not found for the user.");
   }
+
+  const cartItemsQuery = CartItemModel.deleteMany({ cart: cart._id });
+
+  if (session) {
+    cartItemsQuery.session(session);
+  }
+
+  await cartItemsQuery;
+
+  cart.quantity = 0;
+  cart.totalPrice = 0;
+  cart.totalPriceAfterDiscount = 0;
+  cart.totalDiscount = 0;
+
+  await cart.save(session ? { session } : undefined);
 
   return cart;
 };

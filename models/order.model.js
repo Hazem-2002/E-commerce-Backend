@@ -232,13 +232,19 @@ const orderSchema = new mongoose.Schema(
     },
     shippingAddress: {
       type: {
-        fullName: {
+        first_name: {
           type: String,
-          required: [true, "Full name is required"],
+          required: [true, "First name is required"],
           trim: true,
         },
 
-        phone: {
+        last_name: {
+          type: String,
+          required: [true, "Last name is required"],
+          trim: true,
+        },
+
+        phone_number: {
           type: String,
           required: [true, "Phone number is required"],
           trim: true,
@@ -279,7 +285,7 @@ const orderSchema = new mongoose.Schema(
           trim: true,
         },
 
-        postalCode: {
+        postal_code: {
           type: String,
           trim: true,
         },
@@ -329,7 +335,7 @@ const orderSchema = new mongoose.Schema(
     paymentMethod: {
       type: String,
       required: [true, "Payment method is required"],
-      enum: ["credit_card", "paypal", "bank_transfer", "cash_on_delivery"],
+      default: "cash_on_delivery",
     },
     paymentStatus: {
       type: String,
@@ -351,9 +357,17 @@ const orderSchema = new mongoose.Schema(
     deliveredAt: {
       type: Date,
     },
+    pendingExpiresAt: {
+      type: Date,
+      default: new Date(
+        Date.now() + parseInt(process.env.PAYMENT_PENDING_DURATION) * 60 * 1000,
+      ),
+    },
   },
   { timestamps: true },
 );
+
+orderSchema.index({ pendingExpiresAt: 1 }, { expireAfterSeconds: 0 });
 
 orderSchema.set("toJSON", {
   transform: (doc, ret) => {

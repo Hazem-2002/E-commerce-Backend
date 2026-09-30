@@ -12,6 +12,7 @@ const addressRouter = require("./address.router");
 const couponRouter = require("./coupon.router");
 const cartRouter = require("./cart.router");
 const orderRouter = require("./order.router");
+const paymentRouter = require("./payment.router");
 
 const mountRouters = (app) => {
   app.use("/api/v1/auth", authRouter);
@@ -26,6 +27,7 @@ const mountRouters = (app) => {
   app.use("/api/v1/coupons", couponRouter);
   app.use("/api/v1/carts", cartRouter);
   app.use("/api/v1/orders", orderRouter);
+  app.use("/api/v1/payments", paymentRouter);
 
   app.all("/*splat", (req, res, next) => {
     return next(

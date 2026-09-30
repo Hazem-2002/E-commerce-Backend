@@ -14,16 +14,29 @@ const addressSchema = new mongoose.Schema(
       trim: true,
     },
 
-    fullName: {
+    first_name: {
       type: String,
-      required: [true, "Full name is required"],
+      required: [true, "First name is required"],
       trim: true,
     },
 
-    phone: {
+    last_name: {
+      type: String,
+      required: [true, "Last name is required"],
+      trim: true,
+    },
+
+    phone_number: {
       type: String,
       required: [true, "Phone number is required"],
       trim: true,
+    },
+
+    email: {
+      type: String,
+      required: [true, "Email is required"],
+      trim: true,
+      lowercase: true,
     },
 
     country: {
@@ -60,7 +73,12 @@ const addressSchema = new mongoose.Schema(
       trim: true,
     },
 
-    postalCode: {
+    floor: {
+      type: String,
+      trim: true,
+    },
+
+    postal_code: {
       type: String,
       trim: true,
     },

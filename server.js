@@ -1,10 +1,9 @@
 const express = require("express");
 require("dotenv").config();
 const cors = require("cors");
+const compression = require("compression");
 const cookieParser = require("cookie-parser");
-
 const connectDB = require("./config/db_config");
-const apiError = require("./utils/apiError");
 const mountRoutes = require("./routers");
 const globalErrorHandler = require("./middlewares/globalErrorHandler");
 
@@ -19,6 +18,7 @@ app.set("query parser", "extended");
 
 // Middlewares
 app.use(cors());
+app.use(compression());
 app.use(express.json());
 app.use(cookieParser());
 
