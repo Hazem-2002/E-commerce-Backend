@@ -107,6 +107,7 @@ const registerService = async ({ name, phone, email, password, file }) => {
         totalPrice: 0,
         totalDiscount: 0,
         totalPriceAfterDiscount: 0,
+        quantity: 0,
       });
 
       await cart.save({ session });
