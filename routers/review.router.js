@@ -1,7 +1,7 @@
 const express = require("express");
 
 const authenticate = require("../middlewares/authenticate");
-
+const { doubleCsrfProtection } = require("../config/csrf");
 const authorize = require("../middlewares/authorize");
 
 const {
@@ -29,6 +29,7 @@ router
   .get(getReviewsValidator, validate, getReviews)
   .post(
     authenticate,
+    doubleCsrfProtection,
     authorize("user"),
     createReviewValidator,
     validate,
@@ -40,11 +41,18 @@ router
   .get(getReviewByIdValidator, validate, getReviewById)
   .patch(
     authenticate,
+    doubleCsrfProtection,
     updateReviewValidator,
     authorize("user"),
     validate,
     updateReview,
   )
-  .delete(authenticate, deleteReviewValidator, validate, deleteReview);
+  .delete(
+    authenticate,
+    doubleCsrfProtection,
+    deleteReviewValidator,
+    validate,
+    deleteReview,
+  );
 
 module.exports = router;

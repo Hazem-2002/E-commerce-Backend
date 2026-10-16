@@ -4,6 +4,7 @@ const reviewRouter = require("./review.router");
 
 const authenticate = require("../middlewares/authenticate");
 const authorize = require("../middlewares/authorize");
+const { doubleCsrfProtection } = require("../config/csrf");
 
 const parseJsonFields = require("../middlewares/parseJsonFields");
 
@@ -36,6 +37,7 @@ router
   .get(getProductsValidators, validate, getProducts)
   .post(
     authenticate,
+    doubleCsrfProtection,
     authorize("super-admin", "admin"),
     uploadFields(
       [
@@ -57,6 +59,7 @@ router
   .get(getProductByIdValidators, validate, getProductById)
   .patch(
     authenticate,
+    doubleCsrfProtection,
     authorize("super-admin", "admin"),
     uploadFields(
       [
@@ -73,6 +76,7 @@ router
   )
   .delete(
     authenticate,
+    doubleCsrfProtection,
     authorize("super-admin", "admin"),
     deleteProductValidators,
     validate,

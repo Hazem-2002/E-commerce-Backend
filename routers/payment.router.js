@@ -1,6 +1,7 @@
 const express = require("express");
 
 const authenticate = require("../middlewares/authenticate");
+const { doubleCsrfProtection } = require("../config/csrf");
 
 const {
   createPaymentIntention,
@@ -9,7 +10,9 @@ const {
 
 const router = express.Router();
 
-router.route("/checkout").post(authenticate, createPaymentIntention);
+router
+  .route("/checkout")
+  .post(authenticate, doubleCsrfProtection, createPaymentIntention);
 
 router.route("/callback").post(handleTransactionProcessedCallback);
 

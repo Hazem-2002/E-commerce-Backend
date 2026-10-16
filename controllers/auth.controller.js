@@ -17,6 +17,8 @@ const {
   refreshTokenService,
 } = require("../services/auth.service");
 
+const { generateCsrfToken: generateToken } = require("../config/csrf");
+
 const register = asyncWrapper(async (req, res, next) => {
   const { name, email, password, phone } = req.body;
 
@@ -249,6 +251,16 @@ const refreshToken = asyncWrapper(async (req, res, next) => {
     });
 });
 
+const generateCsrfToken = asyncWrapper(async (req, res, next) => {
+  const token = generateToken(req, res);
+
+  res.json({
+    status: httpStatusText.SUCCESS,
+    message: "CSRF token generated successfully",
+    data: { csrfToken: token },
+  });
+});
+
 module.exports = {
   login,
   register,
@@ -260,6 +272,7 @@ module.exports = {
   transferRole,
   logout,
   refreshToken,
+  generateCsrfToken,
   verifyEmail,
   resendVerificationEmail,
 };

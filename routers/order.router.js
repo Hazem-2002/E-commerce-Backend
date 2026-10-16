@@ -2,6 +2,7 @@ const express = require("express");
 
 const authenticate = require("../middlewares/authenticate");
 const authorize = require("../middlewares/authorize");
+const { doubleCsrfProtection } = require("../config/csrf");
 
 const {
   getOrderByIdValidator,
@@ -19,7 +20,7 @@ const {
 
 const router = express.Router();
 
-router.use(authenticate);
+router.use(authenticate, doubleCsrfProtection);
 
 router
   .route("/")

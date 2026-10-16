@@ -4,6 +4,7 @@ const uploadSingle = require("../middlewares/upload/uploadSingle");
 
 const authenticate = require("../middlewares/authenticate");
 const authorize = require("../middlewares/authorize");
+const { doubleCsrfProtection } = require("../config/csrf");
 
 const {
   getUsers,
@@ -44,16 +45,21 @@ router
   .get(authenticate, getMe)
   .patch(
     authenticate,
+    doubleCsrfProtection,
     uploadSingle("profileImage", false),
     updateMeValidator,
     validate,
     updateMe,
   )
-  .delete(authenticate, deleteMe);
+  .delete(authenticate, doubleCsrfProtection, deleteMe);
 
-router.route("/me/reviews").get(authenticate, getMyReviews);
+router
+  .route("/me/reviews")
+  .get(authenticate, getMyReviews);
 
-router.route("/me/wishlist").get(authenticate, getMyWishlist);
+router
+  .route("/me/wishlist")
+  .get(authenticate, getMyWishlist);
 
 router.route("/me/orders").get(authenticate, getMyOrders);
 
@@ -68,6 +74,7 @@ router
   )
   .patch(
     authenticate,
+    doubleCsrfProtection,
     authorize("super-admin", "admin"),
     uploadSingle("profileImage", false),
     updateUserValidator,
@@ -76,6 +83,7 @@ router
   )
   .delete(
     authenticate,
+    doubleCsrfProtection,
     authorize("super-admin", "admin"),
     deleteUserValidator,
     validate,

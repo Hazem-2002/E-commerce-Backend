@@ -3,6 +3,8 @@ const express = require("express");
 const authenticate = require("../middlewares/authenticate");
 const authorize = require("../middlewares/authorize");
 
+const { doubleCsrfProtection } = require("../config/csrf");
+
 const uploadSingle = require("../middlewares/upload/uploadSingle");
 
 const {
@@ -29,6 +31,7 @@ router
   .get(getBrandsValidator, validate, getBrands)
   .post(
     authenticate,
+    doubleCsrfProtection,
     authorize("super-admin", "admin"),
     uploadSingle("image", true),
     createBrandValidator,
@@ -41,6 +44,7 @@ router
   .get(getBrandByIdValidator, validate, getBrandById)
   .patch(
     authenticate,
+    doubleCsrfProtection,
     authorize("super-admin", "admin"),
     uploadSingle("image", false),
     updateBrandValidator,
@@ -49,6 +53,7 @@ router
   )
   .delete(
     authenticate,
+    doubleCsrfProtection,
     authorize("super-admin", "admin"),
     deleteBrandValidator,
     validate,

@@ -2,6 +2,9 @@ const crypto = require("crypto");
 const axios = require("axios");
 const cron = require("node-cron");
 
+const sendEmail = require("../services/sendEmail.service");
+const paymentSuccessTemplate = require("../templates/emails/paymentSuccessTemplate");
+
 const ApiError = require("../utils/apiError");
 
 const PaymentModel = require("../models/payment.model");
@@ -17,7 +20,7 @@ const { clearCartService } = require("./cart.service");
 
 const createPaymentService = async (intentionData, session = null) => {
   const payment = new PaymentModel({
-    user: intentionData.extras.creation_extras.userId,
+    user: intentionData.extras.creation_extras.user._id,
     order: intentionData.special_reference,
     provider: "paymob",
     amount: intentionData.intention_detail.amount,
@@ -99,6 +102,7 @@ const buildPaymobItems = (orderData, cart) => {
 };
 
 const createPaymentIntentionService = async (order, cart) => {
+  console.log("user", order.user);
   const { data } = await axios.post(
     "https://accept.paymob.com/v1/intention/",
     {
@@ -115,7 +119,7 @@ const createPaymentIntentionService = async (order, cart) => {
       special_reference: order._id.toString(),
 
       extras: {
-        userId: order.user._id,
+        user: order.user,
       },
 
       expiration: 15 * 60,
@@ -149,16 +153,21 @@ const handleTransactionProcessedCallbackService = async (
     }
   }
 
+  console.log(
+    "Received callback data:",
+    callbackData.obj.payment_key_claims.extra,
+  );
+
   const {
     id: transactionId,
     success,
     pending,
     amount_cents,
     integration_id,
-    order: { id: paymobOrderId, merchant_order_id: orderId },
+    order: { id: paymobOrderId, merchant_order_id: orderId, shipping_data },
     source_data: { type: payment_method },
     payment_key_claims: {
-      extra: { userId },
+      extra: { user },
     },
   } = callbackData.obj;
 
@@ -198,17 +207,19 @@ const handleTransactionProcessedCallbackService = async (
           {
             paymentMethod: payment_method,
             paymentStatus: "paid",
-            orderStatus: "processing",
             payment: {
               transactionId,
               provider: "paymob",
             },
             paidAt: date,
+            pendingExpiresAt: null,
           },
           session,
         );
 
-        const cart = await CartModel.findOne({ user: userId }).session(session);
+        const cart = await CartModel.findOne({ user: user._id }).session(
+          session,
+        );
 
         const cartItems = await CartItemModel.find({ cart: cart._id }).session(
           session,
@@ -216,7 +227,20 @@ const handleTransactionProcessedCallbackService = async (
 
         await decreaseOrderStockService(cartItems, session);
 
-        await clearCartService(userId, session);
+        await clearCartService(user._id, session);
+
+        await sendEmail(
+          user.email,
+          "Payment Successful - Vendora",
+          paymentSuccessTemplate({
+            name: user.name,
+            orderId,
+            transactionId,
+            paymentMethod: payment_method,
+            amount: (amount_cents / 100).toFixed(2),
+            currency: "EGP",
+          }),
+        );
       } else if (!success && !pending) {
         await updatePaymentService(
           paymobOrderId,

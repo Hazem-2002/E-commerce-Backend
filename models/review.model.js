@@ -32,6 +32,10 @@ reviewSchema.index({ productId: 1, user: 1 }, { unique: true });
 reviewSchema.set("toJSON", {
   transform: (doc, ret) => {
     delete ret.__v;
+    if(ret.productId){
+      ret.product = ret.productId;
+      delete ret.productId;
+    }
     return ret;
   },
 });

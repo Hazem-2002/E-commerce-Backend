@@ -316,6 +316,7 @@ const clearCartService = async (userId, session = null) => {
   cart.totalPrice = 0;
   cart.totalPriceAfterDiscount = 0;
   cart.totalDiscount = 0;
+  cart.coupon = null;
 
   await cart.save(session ? { session } : undefined);
 

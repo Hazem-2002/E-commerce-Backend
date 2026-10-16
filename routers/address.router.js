@@ -1,6 +1,7 @@
 const express = require("express");
 
 const authenticate = require("../middlewares/authenticate");
+const { doubleCsrfProtection } = require("../config/csrf");
 
 const {
   addNewAddressValidator,
@@ -22,11 +23,29 @@ const router = express.Router();
 router
   .route("/")
   .get(authenticate, getAddresses)
-  .post(authenticate, addNewAddressValidator, validate, addNewAddress);
+  .post(
+    authenticate,
+    doubleCsrfProtection,
+    addNewAddressValidator,
+    validate,
+    addNewAddress,
+  );
 
 router
   .route("/:addressId")
-  .patch(authenticate, updateAddressValidator, validate, updateAddress)
-  .delete(authenticate, deleteAddressValidator, validate, deleteAddress);
+  .patch(
+    authenticate,
+    doubleCsrfProtection,
+    updateAddressValidator,
+    validate,
+    updateAddress,
+  )
+  .delete(
+    authenticate,
+    doubleCsrfProtection,
+    deleteAddressValidator,
+    validate,
+    deleteAddress,
+  );
 
 module.exports = router;

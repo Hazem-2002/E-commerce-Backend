@@ -2,6 +2,7 @@ const express = require("express");
 
 const authenticate = require("../middlewares/authenticate");
 const authorize = require("../middlewares/authorize");
+const { doubleCsrfProtection } = require("../config/csrf");
 
 const {
   getWishlists,
@@ -17,10 +18,21 @@ const router = express.Router();
 
 router
   .route("/")
-  .get(authenticate, authorize("super-admin", "admin"), getWishlists);
+  .get(
+    authenticate,
+    doubleCsrfProtection,
+    authorize("super-admin", "admin"),
+    getWishlists,
+  );
 
 router
   .route("/:productId/toggle")
-  .patch(authenticate, toggleWishlistValidator, validate, toggleWishlist);
+  .patch(
+    authenticate,
+    doubleCsrfProtection,
+    toggleWishlistValidator,
+    validate,
+    toggleWishlist,
+  );
 
 module.exports = router;

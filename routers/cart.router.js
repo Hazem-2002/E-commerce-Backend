@@ -2,6 +2,8 @@ const express = require("express");
 
 const authenticate = require("../middlewares/authenticate");
 
+const { doubleCsrfProtection } = require("../config/csrf");
+
 const {
   addToCartValidators,
   updateCartItemValidators,
@@ -22,7 +24,7 @@ const {
 
 const router = express.Router();
 
-router.use(authenticate);
+router.use(authenticate, doubleCsrfProtection);
 
 router.route("/add").post(addToCartValidators, validate, addToCart);
 

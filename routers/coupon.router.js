@@ -1,6 +1,7 @@
 const express = require("express");
 
 const authenticate = require("../middlewares/authenticate");
+const { doubleCsrfProtection } = require("../config/csrf");
 const authorize = require("../middlewares/authorize");
 
 const {
@@ -21,7 +22,11 @@ const {
 
 const router = express.Router();
 
-router.use(authenticate, authorize("super-admin", "admin"));
+router.use(
+  authenticate,
+  doubleCsrfProtection,
+  authorize("super-admin", "admin"),
+);
 
 router
   .route("/")

@@ -2,6 +2,7 @@ const express = require("express");
 
 const authenticate = require("../middlewares/authenticate");
 const authorize = require("../middlewares/authorize");
+const { doubleCsrfProtection } = require("../config/csrf");
 
 const {
   createSubcategoryValidator,
@@ -28,6 +29,7 @@ router
   .get(getSubcategoriesValidator, validate, getSubcategories)
   .post(
     authenticate,
+    doubleCsrfProtection,
     authorize("super-admin", "admin"),
     createSubcategoryValidator,
     validate,
@@ -39,6 +41,7 @@ router
   .get(getSubcategoryByIdValidator, validate, getSubcategoryById)
   .patch(
     authenticate,
+    doubleCsrfProtection,
     authorize("super-admin", "admin"),
     updateSubcategoryValidator,
     validate,
@@ -46,6 +49,7 @@ router
   )
   .delete(
     authenticate,
+    doubleCsrfProtection,
     authorize("super-admin", "admin"),
     deleteSubcategoryValidator,
     validate,

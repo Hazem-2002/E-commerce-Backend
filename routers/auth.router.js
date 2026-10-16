@@ -1,4 +1,5 @@
 const express = require("express");
+const rateLimit = require("express-rate-limit");
 const router = express.Router();
 
 const uploadSingle = require("../middlewares/upload/uploadSingle");
@@ -17,6 +18,7 @@ const {
   changeUserPassword,
   logout,
   refreshToken,
+  generateCsrfToken,
   verifyEmail,
   resendVerificationEmail,
 } = require("../controllers/auth.controller");
@@ -35,6 +37,21 @@ const {
 
 const validate = require("../middlewares/validators/validate");
 
+const { doubleCsrfProtection } = require("../config/csrf");
+
+const httpStatusText = require("../utils/httpStatusText");
+
+const rateLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 50,
+  message: {
+    status: httpStatusText.FAIL,
+    message: "Too many requests from this IP, please try again later.",
+  },
+});
+
+router.use(rateLimiter);
+
 router.route("/login").post(login);
 
 router
@@ -46,10 +63,13 @@ router
     register,
   );
 
+router.route("/csrf-token").get(authenticate, generateCsrfToken);
+
 router
   .route("/:id/change-role")
   .patch(
     authenticate,
+    doubleCsrfProtection,
     authorize("super-admin", "admin"),
     changeRoleValidator,
     validate,
@@ -60,6 +80,7 @@ router
   .route("/:id/transfer-role")
   .post(
     authenticate,
+    doubleCsrfProtection,
     authorize("super-admin", "admin"),
     transferRoleValidator,
     validate,
@@ -86,6 +107,7 @@ router
   .route("/password/change")
   .patch(
     authenticate,
+    doubleCsrfProtection,
     changeUserPasswordValidator,
     validate,
     changeUserPassword,

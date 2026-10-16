@@ -25,6 +25,8 @@ const uploadSingle = require("../middlewares/upload/uploadSingle");
 
 const authenticate = require("../middlewares/authenticate");
 
+const { doubleCsrfProtection } = require("../config/csrf");
+
 const authorize = require("../middlewares/authorize");
 
 router.use("/:id/subcategories", subcategoryRouter);
@@ -34,6 +36,7 @@ router
   .get(getCategoriesValidator, validate, getCategories)
   .post(
     authenticate,
+    doubleCsrfProtection,
     authorize("super-admin", "admin"),
     uploadSingle("image", true),
     createCategoryValidator,
@@ -46,6 +49,7 @@ router
   .get(getCategoryByIdValidator, validate, getCategoryById)
   .patch(
     authenticate,
+    doubleCsrfProtection,
     authorize("super-admin", "admin"),
     uploadSingle("image", false),
     updateCategoryValidator,
@@ -54,6 +58,7 @@ router
   )
   .delete(
     authenticate,
+    doubleCsrfProtection,
     authorize("super-admin", "admin"),
     deleteCategoryValidator,
     validate,

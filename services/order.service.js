@@ -1,6 +1,9 @@
 const ApiError = require("../utils/apiError");
 const ApiFeatures = require("../utils/apiFeatures");
 
+const sendEmail = require("../services/sendEmail.service");
+const cashOnDeliveryTemplate = require("../templates/emails/cashOnDeliveryTemplate");
+
 const OrderModel = require("../models/order.model");
 const CartModel = require("../models/cart.model");
 const CartItemModel = require("../models/cartItem.model");
@@ -206,11 +209,25 @@ const createCashOnDeliveryOrderService = async ({
         session,
       });
 
-      order = await createOrderService(orderData, session);
+      order = await createOrderService(
+        { ...orderData, paymentStatus: "unpaid", pendingExpiresAt: null },
+        session,
+      );
 
       await decreaseOrderStockService(cartItems, session);
 
       await clearCartService(userId, session);
+
+      await sendEmail(
+        orderData.user.email,
+        "Order Confirmed - Vendora",
+        cashOnDeliveryTemplate({
+          name: orderData.user.name,
+          orderId: order._id,
+          totalAmount: order.finalPrice.toFixed(2),
+          currency: "EGP",
+        }),
+      );
     });
   } finally {
     await session.endSession();

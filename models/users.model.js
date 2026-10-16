@@ -16,7 +16,6 @@ const usersSchema = new mongoose.Schema(
     slug: {
       type: String,
       required: [true, "User slug is required"],
-      unique: [true, "Slug already exists"],
       trim: true,
     },
     phone: {
