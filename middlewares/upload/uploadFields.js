@@ -15,7 +15,6 @@ const uploadFields = (
         field.name.toLowerCase().includes(err?.field?.toLowerCase()),
       );
 
-  
       if (
         field &&
         (!req.files[field.name] ||
@@ -40,6 +39,7 @@ const uploadFields = (
 
       if (
         required &&
+        !optionalFields.every((field) => req.files[field]) &&
         !req.uploadError &&
         req.files
       ) {

@@ -229,6 +229,11 @@ const productSchema = new mongoose.Schema(
           delete image._id;
         });
 
+        // Add variant images to productImages array
+        ret.productImages.push(
+          ...ret.variants?.map((variant) => variant.image).filter(Boolean),
+        );
+
         if (ret.quantity) {
           ret.stock = ret.quantity;
           delete ret.quantity;

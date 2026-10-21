@@ -2,7 +2,7 @@ const ntc = require("ntcjs");
 
 const normalizeVariantColors = (productData) => {
   productData.variants.forEach((variant) => {
-    if (variant.color && variant.color.hex) {
+    if (variant.color && variant.color.hex && !variant.color.color) {
       const [, colorName] = ntc.name(variant.color.hex);
 
       if (colorName === "Invalid Color") {
