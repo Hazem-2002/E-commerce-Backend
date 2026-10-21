@@ -20,7 +20,7 @@ const {
 const createProductValidators = [
   nameRule("name", "Product name", 3, 100),
   descriptionRule("shortDescription", "Product short description", 10, 200),
-  descriptionRule("description", "Product description", 10, 200),
+  descriptionRule("description", "Product description", 10, 500),
   quantityRule("quantity", "Product quantity"),
   priceRule("price", "Product price"),
   priceAfterDiscountRule(
@@ -46,7 +46,7 @@ const updateProductValidators = [
     10,
     200,
   ).optional(),
-  descriptionRule("description", "Product description", 10, 200).optional(),
+  descriptionRule("description", "Product description", 10, 500).optional(),
   quantityRule("quantity", "Product quantity").optional(),
   priceRule("price", "Product price").optional(),
   priceAfterDiscountRule(

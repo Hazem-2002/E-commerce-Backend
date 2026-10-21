@@ -395,7 +395,7 @@ const priceAfterDiscountRule = (
     .withMessage(`${typeName} must be a positive number`)
     .bail()
     .custom((value, { req }) => {
-      if (value >= req.body.price) {
+      if (value > req.body.price) {
         return Promise.reject(
           new ApiError(
             400,
