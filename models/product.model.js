@@ -230,9 +230,11 @@ const productSchema = new mongoose.Schema(
         });
 
         // Add variant images to productImages array
-        ret.productImages.push(
-          ...ret.variants?.map((variant) => variant.image).filter(Boolean),
-        );
+        if (ret.productImages && ret.variants) {
+          ret.productImages.push(
+            ...ret.variants?.map((variant) => variant.image).filter(Boolean),
+          );
+        }
 
         if (ret.quantity) {
           ret.stock = ret.quantity;

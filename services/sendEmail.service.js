@@ -2,7 +2,7 @@ const transporter = require("../config/mail");
 
 const sendEmail = async (to, subject, template) => {
   const mailOptions = {
-    from: `Vendora <${process.env.EMAIL_USER}>`,
+    from: `${process.env.APP_NAME} <${process.env.EMAIL_USER}>`,
     to,
     subject,
     html: template,
