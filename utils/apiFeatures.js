@@ -16,7 +16,7 @@ class ApiFeatures {
   filter(filter = {}) {
     this.filters = JSON.parse(
       JSON.stringify(this.productsFilters).replace(
-        /\b(gt|gte|lt|lte)\b/g,
+        /\b(gt|gte|lt|lte|in|nin|eq|ne)\b/g,
         (match) => `$${match}`,
       ),
     );
