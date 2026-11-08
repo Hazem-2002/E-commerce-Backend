@@ -87,6 +87,75 @@ const toggleWishlistService = async (userId, productId) => {
   }
 };
 
+const AddToWishlistService = async (userId, productId) => {
+  const existingProduct = await ProductModel.exists({ _id: productId });
+  if (!existingProduct) {
+    throw new ApiError(404, "Product not found. Please check the provided ID.");
+  }
+
+  let wishlist = await WishListModel.findOne({ user: userId });
+
+  if (!wishlist) {
+    wishlist = await WishListModel.create({ user: userId });
+  }
+
+  const wishlistItem = await WishlistItemModel.findOne({
+    wishlist: wishlist._id,
+    product: productId,
+  });
+
+  if (!wishlistItem) {
+    const newWishlistItem = new WishlistItemModel({
+      wishlist: wishlist._id,
+      product: productId,
+    });
+    await newWishlistItem.save();
+
+    return {
+      message: "Product added to wishlist successfully.",
+      wishlist: await wishlist.getWishlistProducts(),
+    };
+  } else {
+    return {
+      message: "Product already exists in the wishlist.",
+      wishlist: await wishlist.getWishlistProducts(),
+    };
+  }
+};
+
+const deleteFromWishlistService = async (userId, productId) => {
+  const existingProduct = await ProductModel.exists({ _id: productId });
+
+  if (!existingProduct) {
+    throw new ApiError(404, "Product not found. Please check the provided ID.");
+  }
+
+  let wishlist = await WishListModel.findOne({ user: userId });
+
+  if (!wishlist) {
+    wishlist = await WishListModel.create({ user: userId });
+  }
+
+  const wishlistItem = await WishlistItemModel.findOne({
+    wishlist: wishlist._id,
+    product: productId,
+  });
+
+  if (wishlistItem) {
+    await WishlistItemModel.findByIdAndDelete(wishlistItem._id);
+
+    return {
+      message: "Product removed from wishlist successfully.",
+      wishlist: await wishlist.getWishlistProducts(),
+    };
+  } else {
+    return {
+      message: "Product does not exist in the wishlist.",
+      wishlist: await wishlist.getWishlistProducts(),
+    };
+  }
+};
+
 const getUserWishlistService = async (query, userId) => {
   const wishlist = await WishListModel.findOne({ user: userId });
 
@@ -100,7 +169,8 @@ const getUserWishlistService = async (query, userId) => {
     .populate([
       {
         path: "product",
-        select: "name price priceAfterDiscount sold productCover ratingsAverage ratingsQuantity isFeatured isActive tags",
+        select:
+          "name price priceAfterDiscount sold productCover ratingsAverage ratingsQuantity isFeatured isActive tags",
         populate: [
           { path: "category", select: "name" },
           { path: "subcategories", select: "name" },
@@ -132,5 +202,7 @@ const getUserWishlistService = async (query, userId) => {
 module.exports = {
   getWishlistsService,
   toggleWishlistService,
+  AddToWishlistService,
+  deleteFromWishlistService,
   getUserWishlistService,
 };

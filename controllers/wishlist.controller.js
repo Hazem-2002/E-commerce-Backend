@@ -4,6 +4,8 @@ const httpStatusText = require("../utils/httpStatusText");
 const {
   getWishlistsService,
   toggleWishlistService,
+  AddToWishlistService,
+  deleteFromWishlistService,
 } = require("../services/wishlist.service");
 
 const getWishlists = asyncWrapper(async (req, res, next) => {
@@ -29,7 +31,38 @@ const toggleWishlist = asyncWrapper(async (req, res, next) => {
   });
 });
 
+const addToWishlist = asyncWrapper(async (req, res, next) => {
+  const { productId } = req.params;
+  const userId = req.user._id;
+
+  const { message, wishlist } = await AddToWishlistService(userId, productId);
+
+  res.status(200).json({
+    status: httpStatusText.SUCCESS,
+    message,
+    data: { wishlist },
+  });
+});
+
+const removeFromWishlist = asyncWrapper(async (req, res, next) => {
+  const { productId } = req.params;
+  const userId = req.user._id;
+
+  const { message, wishlist } = await deleteFromWishlistService(
+    userId,
+    productId,
+  );
+
+  res.status(200).json({
+    status: httpStatusText.SUCCESS,
+    message,
+    data: { wishlist },
+  });
+});
+
 module.exports = {
   getWishlists,
   toggleWishlist,
+  addToWishlist,
+  removeFromWishlist,
 };

@@ -7,11 +7,15 @@ const { doubleCsrfProtection } = require("../config/csrf");
 const {
   getWishlists,
   toggleWishlist,
+  addToWishlist,
+  removeFromWishlist,
 } = require("../controllers/wishlist.controller");
 
 const validate = require("../middlewares/validators/validate");
 const {
   toggleWishlistValidator,
+  addToWishlistValidator,
+  removeFromWishlistValidator,
 } = require("../middlewares/validators/wishlist.validator");
 
 const router = express.Router();
@@ -33,6 +37,26 @@ router
     toggleWishlistValidator,
     validate,
     toggleWishlist,
+  );
+
+router
+  .route("/:productId/add")
+  .patch(
+    authenticate,
+    doubleCsrfProtection,
+    addToWishlistValidator,
+    validate,
+    addToWishlist,
+  );
+
+router
+  .route("/:productId/delete")
+  .patch(
+    authenticate,
+    doubleCsrfProtection,
+    removeFromWishlistValidator,
+    validate,
+    removeFromWishlist,
   );
 
 module.exports = router;
