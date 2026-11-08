@@ -58,7 +58,7 @@ const login = asyncWrapper(async (req, res, next) => {
     .status(200)
     .cookie("refreshToken", refreshToken, {
       httpOnly: true,
-      sameSite: "strict",
+      sameSite: "none",
       secure: process.env.NODE_ENV === "production",
     })
     .json({
@@ -129,6 +129,7 @@ const sendPasswordResetOTP = asyncWrapper(async (req, res, next) => {
     .status(200)
     .cookie("email", email, {
       httpOnly: true,
+      sameSite: "none",
       secure: process.env.NODE_ENV === "production",
       maxAge: 10 * 60 * 1000,
     })
@@ -156,6 +157,7 @@ const verifyPasswordResetOTP = asyncWrapper(async (req, res, next) => {
     .clearCookie("email")
     .cookie("passwordResetToken", resetToken, {
       httpOnly: true,
+      sameSite: "none",
       secure: process.env.NODE_ENV === "production",
       maxAge: 10 * 60 * 1000,
     })
@@ -241,7 +243,7 @@ const refreshToken = asyncWrapper(async (req, res, next) => {
     .status(200)
     .cookie("refreshToken", newRefreshToken, {
       httpOnly: true,
-      sameSite: "strict",
+      sameSite: "none",
       secure: process.env.NODE_ENV === "production",
     })
     .json({
