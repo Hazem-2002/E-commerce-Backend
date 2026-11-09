@@ -88,7 +88,12 @@ const addToCartService = async ({
 
   await cartItem.populate({
     path: "product",
-    select: "name price priceAfterDiscount quantity",
+    select: "-productImages -variants",
+    populate: [
+      { path: "category", select: "name" },
+      { path: "subcategories", select: "name" },
+      { path: "brand", select: "name" },
+    ],
   });
 
   return cartItem;
@@ -117,7 +122,7 @@ const getCartItemsService = async (query, userId) => {
     .populate([
       {
         path: "product",
-        select: "-productImages -variants -colors",
+        select: "-productImages -variants",
         populate: [
           { path: "category", select: "name" },
           { path: "subcategories", select: "name" },
@@ -219,7 +224,21 @@ const updateCartItemService = async (
   } finally {
     await session.endSession();
   }
-  return cartItem.quantity > 0 ? cartItem : null;
+
+  if (cartItem.quantity > 0) {
+    await cartItem.populate({
+      path: "product",
+      select: "-productImages -variants",
+      populate: [
+        { path: "category", select: "name" },
+        { path: "subcategories", select: "name" },
+        { path: "brand", select: "name" },
+      ],
+    });
+
+    return cartItem;
+  }
+  return null;
 };
 
 const removeFromCartService = async (userId, productId, variantId) => {
@@ -288,7 +307,19 @@ const removeFromCartService = async (userId, productId, variantId) => {
     await session.endSession();
   }
 
-  return cartItem.quantity > 0 ? cartItem : null;
+  if (cartItem.quantity > 0) {
+    await cartItem.populate({
+      path: "product",
+      select: "-productImages -variants",
+      populate: [
+        { path: "category", select: "name" },
+        { path: "subcategories", select: "name" },
+        { path: "brand", select: "name" },
+      ],
+    });
+    return cartItem;
+  }
+  return null;
 };
 
 const clearCartService = async (userId, session = null) => {
