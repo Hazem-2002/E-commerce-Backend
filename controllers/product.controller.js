@@ -5,6 +5,7 @@ const ApiError = require("../utils/apiError");
 const {
   createProductService,
   getProductsService,
+  getProductPriceRangeService,
   getProductByIdService,
   updateProductService,
   deleteProductService,
@@ -33,6 +34,17 @@ const getProducts = asyncWrapper(async (req, res, next) => {
     data: {
       products,
     },
+  });
+});
+
+const getProductPriceRange = asyncWrapper(async (req, res, next) => {
+  const { subcategoryId } = req.params;
+
+  const priceRange = await getProductPriceRangeService(subcategoryId);
+
+  res.status(200).json({
+    status: httpStatusText.SUCCESS,
+    data: priceRange,
   });
 });
 
@@ -92,4 +104,5 @@ module.exports = {
   getProductById,
   updateProduct,
   deleteProduct,
+  getProductPriceRange,
 };

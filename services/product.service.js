@@ -1,3 +1,4 @@
+const mongoose = require("mongoose");
 const ProductModel = require("../models/product.model");
 const ApiError = require("../utils/apiError");
 const ApiFeatures = require("../utils/apiFeatures");
@@ -87,6 +88,32 @@ const getProductByIdService = async (id) => {
   ]);
 
   return product;
+};
+
+const getProductPriceRangeService = async (subcategoryId) => {
+  const priceRange = await ProductModel.aggregate([
+    {
+      $match: {
+        subcategories: new mongoose.Types.ObjectId(subcategoryId),
+      },
+    },
+    {
+      $group: {
+        _id: null,
+        minPrice: { $min: "$price" },
+        maxPrice: { $max: "$price" },
+      },
+    },
+    {
+      $project: {
+        _id: 0,
+        minPrice: 1,
+        maxPrice: 1,
+      },
+    },
+  ]);
+
+  return priceRange.length > 0 ? priceRange[0] : { minPrice: 0, maxPrice: 0 };
 };
 
 const updateProductService = async (id, updatedData, files) => {
@@ -474,6 +501,7 @@ const updateProductImages = async (product, files, deletedImages = []) => {
 module.exports = {
   createProductService,
   getProductsService,
+  getProductPriceRangeService,
   getProductByIdService,
   updateProductService,
   deleteProductService,
