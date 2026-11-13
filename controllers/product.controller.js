@@ -38,13 +38,11 @@ const getProducts = asyncWrapper(async (req, res, next) => {
 });
 
 const getProductPriceRange = asyncWrapper(async (req, res, next) => {
-  const { subcategoryId } = req.params;
-
-  const priceRange = await getProductPriceRangeService(subcategoryId);
+  const priceRange = await getProductPriceRangeService(req.query);
 
   res.status(200).json({
     status: httpStatusText.SUCCESS,
-    data: priceRange,
+    data: { priceRange },
   });
 });
 

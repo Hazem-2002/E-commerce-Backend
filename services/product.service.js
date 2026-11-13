@@ -90,12 +90,35 @@ const getProductByIdService = async (id) => {
   return product;
 };
 
-const getProductPriceRangeService = async (subcategoryId) => {
+const getProductPriceRangeService = async (query) => {
+  const apiFeatures = new ApiFeatures(ProductModel.find(), query);
+
+  // Apply filters
+  apiFeatures.filter();
+
+  // Convert IDs to ObjectIds for MongoDB Aggregation
+  const filters = { ...apiFeatures.filters };
+
+  if (filters.subcategories) {
+    if (typeof filters.subcategories === "string") {
+      filters.subcategories = new mongoose.Types.ObjectId(
+        filters.subcategories,
+      );
+    } else {
+      for (const operator of ["$in", "$nin"]) {
+        if (filters.subcategories[operator]) {
+          filters.subcategories[operator] = filters.subcategories[operator]
+            .flatMap((id) => id.split(","))
+            .map((id) => new mongoose.Types.ObjectId(id.trim()));
+        }
+      }
+    }
+  }
+
+  // Get price range
   const priceRange = await ProductModel.aggregate([
     {
-      $match: {
-        subcategories: new mongoose.Types.ObjectId(subcategoryId),
-      },
+      $match: filters,
     },
     {
       $group: {
@@ -113,7 +136,12 @@ const getProductPriceRangeService = async (subcategoryId) => {
     },
   ]);
 
-  return priceRange.length > 0 ? priceRange[0] : { minPrice: 0, maxPrice: 0 };
+  return (
+    priceRange[0] || {
+      minPrice: 0,
+      maxPrice: 0,
+    }
+  );
 };
 
 const updateProductService = async (id, updatedData, files) => {

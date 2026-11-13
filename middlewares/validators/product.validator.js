@@ -70,15 +70,10 @@ const getProductByIdValidators = [mongoIdRule("id", "Product ID")];
 
 const deleteProductValidators = [mongoIdRule("id", "Product ID")];
 
-const productPriceRangeValidators = [
-  mongoIdRule("subcategoryId", "Subcategory ID"),
-];
-
 module.exports = {
   createProductValidators,
   getProductsValidators,
   getProductByIdValidators,
   updateProductValidators,
   deleteProductValidators,
-  productPriceRangeValidators,
 };

@@ -16,7 +16,6 @@ const {
   getProductByIdValidators,
   updateProductValidators,
   deleteProductValidators,
-  productPriceRangeValidators,
 } = require("../middlewares/validators/product.validator");
 
 const validate = require("../middlewares/validators/validate");
@@ -56,6 +55,8 @@ router
     createProduct,
   );
 
+router.route("/price-range").get(getProductPriceRange);
+
 router
   .route("/:id")
   .get(getProductByIdValidators, validate, getProductById)
@@ -84,9 +85,5 @@ router
     validate,
     deleteProduct,
   );
-
-router
-  .route("/price-range/:subcategoryId")
-  .get(productPriceRangeValidators, validate, getProductPriceRange);
 
 module.exports = router;
