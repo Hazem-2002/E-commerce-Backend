@@ -23,7 +23,10 @@ app.set("query parser", "extended");
 // Middlewares
 app.use(
   cors({
-    origin: ["http://localhost:5173"],
+    origin: [
+      "http://localhost:5173",
+      "https://shopcart-frontend-ydy4.vercel.app",
+    ],
     credentials: true,
   }),
 );
