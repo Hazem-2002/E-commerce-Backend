@@ -16,7 +16,7 @@ const {
 
 const registerValidator = [
   nameRule("name", "User name", 3, 50),
-  phoneRule("phone", "User phone"),
+  phoneRule("phone", "User phone").optional(),
   emailRule("email", "User email")
     .bail()
     .custom(async (value) => {

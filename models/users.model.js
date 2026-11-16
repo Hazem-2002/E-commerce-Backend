@@ -20,7 +20,6 @@ const usersSchema = new mongoose.Schema(
     },
     phone: {
       type: String,
-      required: [true, "User phone is required"],
       unique: [true, "Phone number already exists"],
       trim: true,
       match: [
