@@ -46,7 +46,9 @@ const verifyEmailValidator = [
   otpRule("otp", "OTP"),
 ];
 
-const resendVerificationEmailValidator = [emailRule("email", "User email").optional()];
+const resendVerificationEmailValidator = [
+  emailRule("email", "User email").optional(),
+];
 
 const changeUserPasswordValidator = [
   currentPasswordRule("currentPassword", "Current Password"),
@@ -67,7 +69,7 @@ const changeUserPasswordValidator = [
   confirmPasswordRule("confirmPassword", "newPassword"),
 ];
 
-const forgotPasswordValidator = [emailRule("email", "User email")];
+const forgotPasswordValidator = [emailRule("email", "User email").optional()];
 
 const verifyPasswordResetOTPValidator = [otpRule("otp", "OTP")];
 
