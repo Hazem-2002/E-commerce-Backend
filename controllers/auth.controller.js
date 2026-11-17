@@ -30,11 +30,19 @@ const register = asyncWrapper(async (req, res, next) => {
     file: req.file,
   });
 
-  res.status(201).json({
-    status: httpStatusText.SUCCESS,
-    message: "User account created successfully",
-    data: { user },
-  });
+  res
+    .status(201)
+    .cookie("email", email, {
+      httpOnly: true,
+      sameSite: "none",
+      secure: process.env.NODE_ENV === "production",
+      maxAge: 10 * 60 * 1000,
+    })
+    .json({
+      status: httpStatusText.SUCCESS,
+      message: "User account created successfully",
+      data: { user },
+    });
 });
 
 const login = asyncWrapper(async (req, res, next) => {
@@ -205,18 +213,36 @@ const changeUserPassword = asyncWrapper(async (req, res, next) => {
 });
 
 const resendVerificationEmail = asyncWrapper(async (req, res, next) => {
-  const { email } = req.body;
+  const email = req.cookies.email || req.body.email;
+
+  if (!email) {
+    return next(new ApiError(400, "No email found."));
+  }
 
   await resendVerificationEmailService(email);
 
-  res.status(200).json({
-    status: httpStatusText.SUCCESS,
-    message: "Verification email sent successfully",
-  });
+  res
+    .status(200)
+    .cookie("email", email, {
+      httpOnly: true,
+      sameSite: "none",
+      secure: process.env.NODE_ENV === "production",
+      maxAge: 10 * 60 * 1000,
+    })
+    .json({
+      status: httpStatusText.SUCCESS,
+      message: "Verification email sent successfully",
+    });
 });
 
 const verifyEmail = asyncWrapper(async (req, res, next) => {
-  const { email, otp } = req.body;
+  const { otp } = req.body;
+
+  const email = req.cookies.email || req.body.email;
+
+  if (!email) {
+    return next(new ApiError(400, "No email found."));
+  }
 
   const user = await verifyEmailService({ email, otp });
 

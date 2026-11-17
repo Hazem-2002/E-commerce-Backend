@@ -42,11 +42,11 @@ const changeRoleValidator = [
 const transferRoleValidator = [mongoIdRule("id", "User ID")];
 
 const verifyEmailValidator = [
-  emailRule("email", "User email"),
+  emailRule("email", "User email").optional(),
   otpRule("otp", "OTP"),
 ];
 
-const resendVerificationEmailValidator = [emailRule("email", "User email")];
+const resendVerificationEmailValidator = [emailRule("email", "User email").optional()];
 
 const changeUserPasswordValidator = [
   currentPasswordRule("currentPassword", "Current Password"),
