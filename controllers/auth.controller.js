@@ -36,7 +36,7 @@ const register = asyncWrapper(async (req, res, next) => {
       httpOnly: true,
       sameSite: "none",
       secure: process.env.NODE_ENV === "production",
-      maxAge: 10 * 60 * 1000,
+      maxAge: 24 * 60 * 60 * 1000,
     })
     .json({
       status: httpStatusText.SUCCESS,
@@ -129,7 +129,11 @@ const transferRole = asyncWrapper(async (req, res, next) => {
 });
 
 const sendPasswordResetOTP = asyncWrapper(async (req, res, next) => {
-  const { email } = req.body;
+  const email = req.body.email || req.cookies.email;
+
+  if (!email) {
+    return next(new ApiError(400, "No email found."));
+  }
 
   await sendPasswordResetOTPService(email);
 
@@ -139,7 +143,7 @@ const sendPasswordResetOTP = asyncWrapper(async (req, res, next) => {
       httpOnly: true,
       sameSite: "none",
       secure: process.env.NODE_ENV === "production",
-      maxAge: 10 * 60 * 1000,
+      maxAge: 24 * 60 * 60 * 1000,
     })
     .json({
       status: httpStatusText.SUCCESS,
@@ -227,7 +231,7 @@ const resendVerificationEmail = asyncWrapper(async (req, res, next) => {
       httpOnly: true,
       sameSite: "none",
       secure: process.env.NODE_ENV === "production",
-      maxAge: 10 * 60 * 1000,
+      maxAge: 24 * 60 * 60 * 1000,
     })
     .json({
       status: httpStatusText.SUCCESS,
