@@ -243,13 +243,10 @@ const getUserOrdersService = async (query, userId) => {
     throw new ApiError(404, "User not found. Please check the user ID.");
   }
 
-  const apiFeatures = new ApiFeatures(
-    OrderModel.find({ "user._id": userId }),
-    query,
-  );
+  const apiFeatures = new ApiFeatures(OrderModel.find(), query);
 
   apiFeatures
-    .filter()
+    .filter({ "user._id": userId })
     .search("user.name", "user.email", "user.phone", "cartItems.product.name")
     .paginate(await OrderModel.countDocuments(apiFeatures.filters))
     .sort()

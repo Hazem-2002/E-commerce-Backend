@@ -159,12 +159,10 @@ const deleteFromWishlistService = async (userId, productId) => {
 const getUserWishlistService = async (query, userId) => {
   const wishlist = await WishListModel.findOne({ user: userId });
 
-  const apiFeatures = new ApiFeatures(
-    WishlistItemModel.find({ wishlist: wishlist?._id }),
-    query,
-  );
+  const apiFeatures = new ApiFeatures(WishlistItemModel.find(), query);
 
   apiFeatures
+    .filter({ wishlist: wishlist?._id })
     .paginate(await WishlistItemModel.countDocuments(apiFeatures.filters))
     .populate([
       {

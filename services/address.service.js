@@ -10,13 +10,10 @@ const getAddressesService = async (query, userId) => {
     throw new ApiError(404, "User not found. Please check the provided ID.");
   }
 
-  const apiFeatures = new ApiFeatures(
-    AddressModel.find({ user: userId }),
-    query,
-  );
+  const apiFeatures = new ApiFeatures(AddressModel.find(), query);
 
   apiFeatures
-    .filter()
+    .filter({ user: userId })
     .paginate(await AddressModel.countDocuments(apiFeatures.filters))
     .sort()
     .limitFields()

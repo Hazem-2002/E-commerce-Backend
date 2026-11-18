@@ -108,13 +108,10 @@ const getCartItemsService = async (query, userId) => {
 
   await recalculateCart(myCart);
 
-  const apiFeatures = new ApiFeatures(
-    CartItemModel.find({ cart: myCart._id }),
-    query,
-  );
+  const apiFeatures = new ApiFeatures(CartItemModel.find(), query);
 
   apiFeatures
-    .filter()
+    .filter({ cart: myCart._id })
     .search()
     .paginate(await CartItemModel.countDocuments(apiFeatures.filters))
     .sort()
