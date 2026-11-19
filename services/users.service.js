@@ -155,7 +155,7 @@ const uploadUserImageService = async (user, file) => {
 };
 
 const deleteUserImageService = async (user) => {
-  if (user.image.public_id !== "users/profile-images/uvjrevfifa7lvkpn3o3k") {
+  if (user.image.public_id !== "users/profile-images/wtdirqslzvlga25k0jlj") {
     await deleteFromCloudinary(user.image.public_id);
   }
 };

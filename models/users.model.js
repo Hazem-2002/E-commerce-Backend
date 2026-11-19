@@ -62,8 +62,8 @@ const usersSchema = new mongoose.Schema(
       },
       default: {
         image_url:
-          "https://res.cloudinary.com/tbt51mng/image/upload/v1788654904/users/profile-images/uvjrevfifa7lvkpn3o3k.png",
-        public_id: "users/profile-images/uvjrevfifa7lvkpn3o3k",
+          "https://res.cloudinary.com/tbt51mng/image/upload/v1795106372/users/profile-images/wtdirqslzvlga25k0jlj.png",
+        public_id: "users/profile-images/wtdirqslzvlga25k0jlj",
       },
     },
 
